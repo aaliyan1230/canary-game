@@ -18,6 +18,7 @@ class ConditionConfig:
     quarantine: bool
     n_agents: int
     n_attackers: int
+    attacker_intents: tuple[str, ...]
     n_decoys: int
     max_steps: int
     action_budget: int

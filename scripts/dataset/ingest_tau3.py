@@ -28,7 +28,7 @@ def source_commit(path: Path) -> str:
         return subprocess.check_output(
             ["git", "-C", str(path), "rev-parse", "HEAD"], text=True
         ).strip()
-    except Exception:
+    except (OSError, subprocess.SubprocessError):
         return "unknown"
 
 

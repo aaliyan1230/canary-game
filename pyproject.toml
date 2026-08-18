@@ -20,6 +20,9 @@ gen = [
     "anthropic>=0.40",
     "boto3>=1.35",
 ]
+sim = [
+    "openai>=1.30",
+]
 
 [build-system]
 requires = ["hatchling"]

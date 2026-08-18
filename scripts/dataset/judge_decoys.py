@@ -12,8 +12,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -115,7 +115,7 @@ def main() -> int:
 
             judge = judge_bedrock
             provider = "bedrock"
-        except Exception:
+        except ImportError:
             judge = judge_gemini
             provider = "gemini"
     else:

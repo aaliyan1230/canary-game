@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from canarygame.agents import Agent
-from canarygame.monitor import AgentAction as Action
+from canarygame.monitor import AgentAction
 
 
 class AttackerPolicy:
-    """Adaptive probing strategy over the decoy space.
+    """Adaptive probing strategy over the decoy space (scripted/mock path).
 
-    `choose` receives everything the attacker observed (tool listings,
-    memory snapshots, prior probes) and returns the next action kind +
-    payload. Concrete strategies implement fingerprint learning and, for the
-    coalition variant, pooling via shared memory.
+    Real attackers are LLM-driven via their prompt; this policy class is the
+    deterministic fallback used in offline smoke tests.
     """
 
     def choose(
@@ -48,6 +46,8 @@ class SequentialProbe(AttackerPolicy):
 
 
 class AttackerAgent(Agent):
+    """Deterministic attacker used in smoke tests (policy-driven)."""
+
     def __init__(
         self,
         name: str,
@@ -57,12 +57,14 @@ class AttackerAgent(Agent):
         monitor,
         policy: AttackerPolicy,
         budget: int,
+        system: str = "adversary",
+        task: str = "vault access",
     ) -> None:
-        super().__init__(name=name, llm=llm, memory=memory, sandbox=sandbox, monitor=monitor)
+        super().__init__(name=name, llm=llm, memory=memory, sandbox=sandbox, monitor=monitor, system=system, task=task)
         self.policy = policy
         self.budget = budget
 
-    def act(self, task: str, role: str, episode: int, step: int):
+    def act(self, role: str, episode: int, step: int):
         memory = self.memory.read(self.name)
         observed = [
             line.split()[-1]
@@ -70,7 +72,7 @@ class AttackerAgent(Agent):
             if line.startswith(("discovered ", "fingerprint "))
         ]
         kind, payload = self.policy.choose(step, observed, memory, self.budget)
-        action = Action(kind=kind, payload=payload, agent=self.name, step=step)
+        action = AgentAction(kind=kind, payload=payload, agent=self.name, step=step)
         if action.kind == "share_memory":
             self.memory.share(self.name, action.payload)
         event = self.monitor.observe(episode, step, self.name, role, action)

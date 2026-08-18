@@ -7,11 +7,12 @@ conditions:
     broker: false
     quarantine: false
     n_agents: 3
-    n_attackers: 1
+    n_attackers: 2
+    attacker_intents: [medium, medium]
     n_decoys: 4
     max_steps: 40
     action_budget: 30
-    benign_tasks: 5
+    benign_tasks: 3
 
   coalition:
     shared_memory: true
@@ -19,11 +20,12 @@ conditions:
     broker: false
     quarantine: false
     n_agents: 3
-    n_attackers: 1
+    n_attackers: 2
+    attacker_intents: [medium, medium]
     n_decoys: 4
     max_steps: 40
     action_budget: 30
-    benign_tasks: 5
+    benign_tasks: 3
 
   rotation:
     shared_memory: true
@@ -31,11 +33,12 @@ conditions:
     broker: false
     quarantine: false
     n_agents: 3
-    n_attackers: 1
+    n_attackers: 2
+    attacker_intents: [medium, medium]
     n_decoys: 4
     max_steps: 40
     action_budget: 30
-    benign_tasks: 5
+    benign_tasks: 3
 
   containment:
     shared_memory: true
@@ -43,8 +46,9 @@ conditions:
     broker: true
     quarantine: true
     n_agents: 3
-    n_attackers: 1
+    n_attackers: 2
+    attacker_intents: [high, medium]
     n_decoys: 4
     max_steps: 40
     action_budget: 30
-    benign_tasks: 5
+    benign_tasks: 3

@@ -1,8 +1,12 @@
 """Batch rollout entrypoint.
 
-Usage:
-    uv run python scripts/run_experiment.py --condition coalition --seeds 0-9
-    uv run python scripts/run_experiment.py --condition all --seeds 0-2 --backend mock
+Offline smoke (default):
+    uv run python scripts/run_experiment.py --condition coalition --seeds 0-2 --backend mock
+
+SLM simulation on a served vLLM endpoint (GPU pod):
+    uv run python scripts/run_experiment.py --condition containment --seeds 0-4 \
+        --backend vllm --base-url http://localhost:8000/v1 --model Qwen/Qwen3-4B \
+        --intents high medium
 """
 
 from __future__ import annotations
@@ -14,9 +18,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from canarygame.agents import MockLLM, VLLMBackend
 from canarygame.config import load_conditions
 from canarygame.harness import run_episode
 from canarygame.metrics import summarize
+
+DATA = Path(__file__).resolve().parents[1] / "data"
 
 
 def parse_seeds(spec: str) -> list[int]:
@@ -31,11 +38,27 @@ def parse_seeds(spec: str) -> list[int]:
     return out
 
 
+def load_records() -> dict[tuple[str, int, int], dict]:
+    path = DATA / "dataset_v1" / "records.jsonl"
+    if not path.exists():
+        return {}
+    records = {}
+    with path.open() as f:
+        for line in f:
+            r = json.loads(line)
+            records[(r["condition"], r["seed"], r["episode"])] = r
+    return records
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--condition", default="coalition")
     parser.add_argument("--seeds", default="0")
     parser.add_argument("--episodes", type=int, default=3)
+    parser.add_argument("--backend", choices=["mock", "vllm"], default="mock")
+    parser.add_argument("--base-url", default="http://localhost:8000/v1")
+    parser.add_argument("--model", default="Qwen/Qwen3-4B")
+    parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
 
@@ -45,20 +68,25 @@ def main() -> None:
     else:
         names = [args.condition]
 
+    if args.backend == "vllm":
+        backend = lambda: VLLMBackend(base_url=args.base_url, model=args.model)
+    else:
+        backend = MockLLM
+    intents = args.intents.split(",") if args.intents else None
+    records = load_records()
+
     for name in names:
         cfg = conditions[name]
-        results = [
-            run_episode(cfg, seed, episode)
-            for seed in parse_seeds(args.seeds)
-            for episode in range(args.episodes)
-        ]
+        results = []
+        for seed in parse_seeds(args.seeds):
+            for episode in range(args.episodes):
+                record = records.get((name, seed, episode))
+                results.append(run_episode(cfg, seed, episode, record=record, llm_factory=backend, attacker_intents=intents))
         report = summarize(results)
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
         path = out / f"{name}.json"
-        path.write_text(
-            json.dumps(report.__dict__, indent=2, default=str)
-        )
+        path.write_text(json.dumps(report.__dict__, indent=2, default=str))
         print(f"{name}: {report}")
 
 
