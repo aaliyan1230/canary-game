@@ -1,0 +1,50 @@
+# Per-condition experiment parameters. Loaded by canarygame.config.
+
+conditions:
+  baseline:
+    shared_memory: false
+    decoy_policy: fixed
+    broker: false
+    quarantine: false
+    n_agents: 3
+    n_attackers: 1
+    n_decoys: 4
+    max_steps: 40
+    action_budget: 30
+    benign_tasks: 5
+
+  coalition:
+    shared_memory: true
+    decoy_policy: fixed
+    broker: false
+    quarantine: false
+    n_agents: 3
+    n_attackers: 1
+    n_decoys: 4
+    max_steps: 40
+    action_budget: 30
+    benign_tasks: 5
+
+  rotation:
+    shared_memory: true
+    decoy_policy: per_episode
+    broker: false
+    quarantine: false
+    n_agents: 3
+    n_attackers: 1
+    n_decoys: 4
+    max_steps: 40
+    action_budget: 30
+    benign_tasks: 5
+
+  containment:
+    shared_memory: true
+    decoy_policy: private
+    broker: true
+    quarantine: true
+    n_agents: 3
+    n_attackers: 1
+    n_decoys: 4
+    max_steps: 40
+    action_budget: 30
+    benign_tasks: 5
