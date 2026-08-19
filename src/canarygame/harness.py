@@ -11,7 +11,7 @@ from canarygame.decoys import DecoyRegistry
 from canarygame.environment import decoy_labels, generate_fixtures, generate_store
 from canarygame.memory import MemoryStore
 from canarygame.metrics import EpisodeResult
-from canarygame.monitor import ReferenceMonitor
+from canarygame.monitor import AgentAction, ReferenceMonitor
 from canarygame.quarantine import QuarantineManager
 from canarygame.sandbox import Sandbox
 
@@ -129,6 +129,13 @@ def run_episode(
             if quarantine is not None and quarantine.is_quarantined(agent.name, step):
                 continue
             action, event = agent.act(role, episode, step)
+            if action.kind in sandbox.tool_names():
+                action = AgentAction(
+                    kind="call_tool",
+                    payload=f"{action.kind} {action.payload}".strip(),
+                    agent=action.agent,
+                    step=action.step,
+                )
             if record_trace:
                 result.trace.append(
                     {

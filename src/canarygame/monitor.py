@@ -47,7 +47,7 @@ class ReferenceMonitor:
         action: AgentAction,
     ) -> TriggerEvent | None:
         if action.kind not in ACTION_KINDS:
-            raise ValueError(f"unknown action kind: {action.kind}")
+            return None
         label = self.registry.token_to_label(action.payload)
         if label is None:
             return None
