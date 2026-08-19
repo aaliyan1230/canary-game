@@ -63,17 +63,30 @@ fi
 echo "vLLM ready"
 
 echo "== running matrix: conditions=$CONDITIONS seeds=$SEEDS episodes=$EPISODES =="
-python scripts/run_experiment.py \
-  --condition "$CONDITIONS" \
-  --seeds "$SEEDS" \
-  --episodes "$EPISODES" \
-  --backend vllm \
-  --attacker-mode llm \
-  --base-url "http://localhost:$PORT/v1" \
-  --model "$MODEL" \
+ARGS=(
+  --condition "$CONDITIONS"
+  --seeds "$SEEDS"
+  --episodes "$EPISODES"
+  --backend vllm
+  --attacker-mode llm
+  --base-url "http://localhost:$PORT/v1"
+  --model "$MODEL"
   --out results
+)
+if [ "${CANARY_TRACE:-0}" = "1" ]; then ARGS+=(--trace); fi
+python scripts/run_experiment.py "${ARGS[@]}"
 
 kill "$VPID" 2>/dev/null || true
 
-echo "== results (results/*.json) =="
-for f in results/*.json; do echo "--- $f ---"; cat "$f"; done
+echo "== results summary (results/*.json) =="
+python - <<'PY'
+import glob, json
+for f in sorted(glob.glob("results/*.json")):
+    d = json.load(open(f))
+    keys = {k: d[k] for k in ("condition","seeds","activation_rate","attack_coverage","benign_fpr","benign_success","post_trigger_harm","contagion","mean_time_to_trigger")}
+    print(json.dumps(keys))
+    if d.get("trace"):
+        print("  trace sample (first 5 actions):")
+        for t in d["trace"][:5]:
+            print("   ", t)
+PY
