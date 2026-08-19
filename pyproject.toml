@@ -8,6 +8,8 @@ dependencies = [
     "PyYAML>=6.0",
     "torch>=2.6; sys_platform == 'linux'",
     "vllm>=0.9,<0.12; sys_platform == 'linux'",
+    "openai>=1.30",
+    "huggingface_hub>=0.28",
 ]
 
 [dependency-groups]
@@ -17,13 +19,9 @@ dev = [
 ]
 gen = [
     "datasets>=3.0",
-    "huggingface_hub>=0.28",
     "google-genai>=1.0",
     "anthropic>=0.40",
     "boto3>=1.35",
-]
-sim = [
-    "openai>=1.30",
 ]
 
 [[tool.uv.index]]

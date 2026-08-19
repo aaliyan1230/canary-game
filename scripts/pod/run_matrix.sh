@@ -25,6 +25,28 @@ python scripts/dataset/build_dataset.py --seeds 0-4 --episodes 3
 python scripts/dataset/acceptance.py
 
 echo "== serving $MODEL on :$PORT =="
+echo "pre-downloading model (hf_transfer off for reliability)"
+export HF_HUB_ENABLE_HF_TRANSFER=0
+ok=0
+for attempt in 1 2 3; do
+  if python - "$MODEL" <<'PY'
+import sys
+from huggingface_hub import snapshot_download
+p = snapshot_download(sys.argv[1])
+print("model cached at", p)
+PY
+  then
+    ok=1
+    break
+  fi
+  echo "model download attempt $attempt failed; retrying" >&2
+  sleep 5
+done
+if [ "$ok" != "1" ]; then
+  echo "model download failed after 3 attempts" >&2
+  exit 1
+fi
+
 nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 8192 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
 VPID=$!
 for _ in $(seq 1 240); do

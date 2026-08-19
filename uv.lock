@@ -317,9 +317,12 @@ name = "canarygame"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "huggingface-hub", version = "1.28.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin' or sys_platform == 'emscripten' or sys_platform == 'win32'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
     { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.13' and sys_platform == 'darwin') or (python_full_version < '3.13' and sys_platform == 'emscripten') or (python_full_version < '3.13' and sys_platform == 'win32')" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.13' and sys_platform == 'darwin') or (python_full_version >= '3.13' and sys_platform == 'emscripten') or (python_full_version >= '3.13' and sys_platform == 'win32')" },
+    { name = "openai" },
     { name = "pyyaml" },
     { name = "torch", marker = "sys_platform == 'linux'" },
     { name = "vllm", marker = "sys_platform == 'linux'" },
@@ -336,16 +339,13 @@ gen = [
     { name = "boto3" },
     { name = "datasets" },
     { name = "google-genai" },
-    { name = "huggingface-hub", version = "0.36.2", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "huggingface-hub", version = "1.28.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform == 'darwin' or sys_platform == 'emscripten' or sys_platform == 'win32'" },
-]
-sim = [
-    { name = "openai" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "huggingface-hub", specifier = ">=0.28" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "openai", specifier = ">=1.30" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "torch", marker = "sys_platform == 'linux'", specifier = ">=2.6", index = "https://download.pytorch.org/whl/cu128" },
     { name = "vllm", marker = "sys_platform == 'linux'", specifier = ">=0.9,<0.12" },
@@ -361,9 +361,7 @@ gen = [
     { name = "boto3", specifier = ">=1.35" },
     { name = "datasets", specifier = ">=3.0" },
     { name = "google-genai", specifier = ">=1.0" },
-    { name = "huggingface-hub", specifier = ">=0.28" },
 ]
-sim = [{ name = "openai", specifier = ">=1.30" }]
 
 [[package]]
 name = "cbor2"
