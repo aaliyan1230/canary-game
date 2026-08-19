@@ -61,7 +61,7 @@ kill "$VPID" 2>/dev/null || true
 echo "== archiving results (results_archive/) =="
 ARCHIVE="results_archive/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$ARCHIVE"
-cp -r results/sweep* "$ARCHIVE"/ 2>/dev/null || true
+cp -r results/* "$ARCHIVE"/ 2>/dev/null || true
 echo "archived to $ARCHIVE"
 
 echo "== sweep summary =="
