@@ -17,7 +17,8 @@ def test_build_messages_roles_alternate():
     roles = [m["role"] for m in messages]
     assert roles[0] == "system"
     tail = roles[1:]
-    assert all(a != b for a, b in pairwise(tail))    assert tail[-1] == "user"
+    assert all(a != b for a, b in pairwise(tail))
+    assert tail[-1] == "user"
 
 
 def test_episode_smoke_all_conditions():
