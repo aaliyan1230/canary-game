@@ -1,5 +1,22 @@
+from canarygame.agents import build_messages
 from canarygame.config import load_conditions
 from canarygame.harness import run_episode
+
+
+def test_build_messages_roles_alternate():
+    messages = build_messages(
+        "sys",
+        "task",
+        ["read_file"],
+        ["note"],
+        2,
+        history=[(0, "call_tool list_entries"), (1, "share_memory hi")],
+    )
+    roles = [m["role"] for m in messages]
+    assert roles[0] == "system"
+    tail = roles[1:]
+    assert all(a != b for a, b in zip(tail, tail[1:]))
+    assert tail[-1] == "user"
 
 
 def test_episode_smoke_all_conditions():

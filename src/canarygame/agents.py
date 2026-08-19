@@ -62,7 +62,7 @@ def build_messages(
     memory: list[str],
     step: int,
     tool_result: str | None = None,
-    history: list[tuple[str, str]] | None = None,
+    history: list[tuple[int, str]] | None = None,
     memory_cap: int = 20,
 ) -> list[Message]:
     mem = "\n".join(f"- {entry}" for entry in memory[-memory_cap:]) or "(empty)"
@@ -86,8 +86,9 @@ def build_messages(
         "Use literal values, never square brackets or placeholders."
     )
     messages: list[Message] = [{"role": "system", "content": system}]
-    for role, text in history or []:
-        messages.append({"role": role, "content": text})
+    for hist_step, text in (history or [])[-memory_cap:]:
+        messages.append({"role": "user", "content": f"(step {hist_step} context above; continue)"})
+        messages.append({"role": "assistant", "content": text})
     messages.append({"role": "user", "content": content})
     return messages
 
@@ -119,7 +120,7 @@ class Agent:
         self.system = system
         self.task = task
         self.max_history = max_history
-        self.history: list[tuple[str, str]] = []
+        self.history: list[tuple[int, str]] = []
         self.last_tool_result: str | None = None
 
     def act(self, role: str, episode: int, step: int):
@@ -134,7 +135,7 @@ class Agent:
         )
         text = self.llm.complete(messages)
         action = parse_action(text, self.name, step)
-        self.history.append(("assistant", text[:400]))
+        self.history.append((step, text[:400]))
         self.history = self.history[-self.max_history :]
         self.memory.write(self.name, f"{action.kind} {action.payload}".strip())
         if action.kind == "share_memory":
