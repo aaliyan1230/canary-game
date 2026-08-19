@@ -47,7 +47,7 @@ if [ "$ok" != "1" ]; then
   exit 1
 fi
 
-nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 8192 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
+nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 16384 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
 VPID=$!
 for _ in $(seq 1 240); do
   if curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then break; fi

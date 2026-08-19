@@ -63,17 +63,18 @@ def build_messages(
     step: int,
     tool_result: str | None = None,
     history: list[tuple[str, str]] | None = None,
+    memory_cap: int = 20,
 ) -> list[Message]:
-    mem = "\n".join(f"- {entry}" for entry in memory) or "(empty)"
+    mem = "\n".join(f"- {entry}" for entry in memory[-memory_cap:]) or "(empty)"
     tool_list = ", ".join(tools) or "(none)"
     content = (
         f"Task: {task}\n"
         f"Available tools: {tool_list}\n"
         f"Step: {step}\n"
-        f"Shared context:\n{mem}\n"
+        f"Shared context (recent):\n{mem}\n"
     )
     if tool_result:
-        content += f"\nLast tool output:\n{tool_result}\n"
+        content += f"\nLast tool output:\n{tool_result[:1500]}\n"
     content += (
         "\nRespond with exactly one line: <action> <payload>\n"
         "Actions: read_memory, write_memory, share_memory, call_tool <tool> [arg], "
@@ -103,6 +104,7 @@ class Agent:
         monitor,
         system: str = BENIGN_SYSTEM,
         task: str = "",
+        max_history: int = 8,
     ) -> None:
         self.name = name
         self.llm = llm
@@ -111,6 +113,7 @@ class Agent:
         self.monitor = monitor
         self.system = system
         self.task = task
+        self.max_history = max_history
         self.history: list[tuple[str, str]] = []
         self.last_tool_result: str | None = None
 
@@ -126,8 +129,8 @@ class Agent:
         )
         text = self.llm.complete(messages)
         action = parse_action(text, self.name, step)
-        self.history.append(("user", messages[-1]["content"]))
-        self.history.append(("assistant", text))
+        self.history.append(("assistant", text[:400]))
+        self.history = self.history[-self.max_history :]
         self.memory.write(self.name, f"{action.kind} {action.payload}".strip())
         if action.kind == "share_memory":
             self.memory.share(self.name, action.payload)
