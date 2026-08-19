@@ -1,0 +1,6 @@
+# Floor-pinned runtime deps for the Lambda pod (legacy path only; the
+# primary path is pyproject.toml + uv.lock). torch/vllm are installed from
+# uv.lock on the pod — do not add them here.
+numpy>=2.0
+PyYAML>=6.0
+openai>=1.30

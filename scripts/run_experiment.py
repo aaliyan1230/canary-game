@@ -66,7 +66,7 @@ def main() -> None:
     if args.condition == "all":
         names = list(conditions)
     else:
-        names = [args.condition]
+        names = [c.strip() for c in args.condition.split(",")]
 
     if args.backend == "vllm":
         backend = lambda: VLLMBackend(base_url=args.base_url, model=args.model)
