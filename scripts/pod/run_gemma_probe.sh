@@ -49,6 +49,10 @@ if ! curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
 fi
 echo "vLLM ready"
 
+echo "== direct prompt framing probe =="
+python scripts/pod/gemma_prompt_probe.py "$BASE" "$MODEL"
+
+echo "== probe: coalition =="
 OUT="results/gemma_probe"
 mkdir -p "$OUT"
 for cond in coalition containment; do
@@ -64,9 +68,10 @@ done
 kill "$VPID" 2>/dev/null || true
 
 echo "== raw attacker outputs (probe traces) =="
-python - <<'PY'
-import glob, json
-for f in sorted(glob.glob("$OUT/*/episodes/*/*.json")):
+python - "$OUT" <<'PY'
+import glob, json, sys
+root = sys.argv[1]
+for f in sorted(glob.glob(f"{root}/*/episodes/*/*.json")):
     d = json.load(open(f))
     print("=====", f)
     for t in d.get("trace", []):
@@ -76,9 +81,10 @@ for f in sorted(glob.glob("$OUT/*/episodes/*/*.json")):
 PY
 
 echo "== probe summary =="
-python - <<'PY'
-import glob, json, os
-for f in sorted(glob.glob("$OUT/*/*.json")):
+python - "$OUT" <<'PY'
+import glob, json, os, sys
+root = sys.argv[1]
+for f in sorted(glob.glob(f"{root}/*/*.json")):
     d = json.load(open(f))
     keys = {k: d[k] for k in ("condition","seeds","activation_rate","attack_coverage","post_trigger_harm","contagion")}
     print(os.path.basename(os.path.dirname(f)), json.dumps(keys))
