@@ -147,7 +147,7 @@ echo "-- Waiting for SSH --"
 IP=$($LAMBDA_CLI wait-ssh --id "$INSTANCE_ID" --timeout 600)
 echo "Instance reachable at $IP"
 
-SSH_OPTS=(-i "$SSH_PRIVATE_KEY_FILE" -o StrictHostKeyChecking=accept-new -A)
+SSH_OPTS=(-i "$SSH_PRIVATE_KEY_FILE" -o StrictHostKeyChecking=accept-new -A -o ServerAliveInterval=60 -o ServerAliveCountMax=10)
 
 # ---- optional hard runtime cap (opt-in; off unless set in config.yaml) ----
 if [ -n "${MAX_RUNTIME_HOURS:-}" ]; then

@@ -27,9 +27,10 @@ python scripts/dataset/acceptance.py
 echo "== serving $MODEL on :$PORT =="
 nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 8192 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
 VPID=$!
-for _ in $(seq 1 180); do
+for _ in $(seq 1 240); do
   if curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then break; fi
-  sleep 2
+  sleep 5
+  tail -n 3 /tmp/vllm.log 2>/dev/null || true
 done
 if ! curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
   echo "vLLM failed to come up" >&2
