@@ -69,7 +69,7 @@ def main() -> None:
         names = [c.strip() for c in args.condition.split(",")]
 
     if args.backend == "vllm":
-        backend = lambda: VLLMBackend(base_url=args.base_url, model=args.model)
+        backend = lambda script: VLLMBackend(base_url=args.base_url, model=args.model)
     else:
         backend = MockLLM
     intents = args.intents.split(",") if args.intents else None
