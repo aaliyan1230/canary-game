@@ -14,6 +14,18 @@ class LLMBackend(Protocol):
 
 ACTION_RE = re.compile(r"^(\w+)\s*(.*)$")
 
+WRAPPED_VERBS = ("use_credential", "probe", "share_memory", "read_memory", "write_memory")
+SECRET_PREFIXES = (
+    "secret=",
+    "credential=",
+    "cred=",
+    "token=",
+    "key=",
+    "api_key=",
+    "password=",
+    "probe=",
+)
+
 
 def parse_action(text: str, agent: str, step: int) -> AgentAction:
     match = ACTION_RE.match(text.strip().splitlines()[0])
@@ -21,6 +33,28 @@ def parse_action(text: str, agent: str, step: int) -> AgentAction:
         return AgentAction(kind="noop", agent=agent, step=step, text=text[:400])
     kind, payload = match.group(1), match.group(2).strip()
     return AgentAction(kind=kind, payload=payload, agent=agent, step=step, text=text[:400])
+
+
+def extract_secret(payload: str) -> str:
+    token = payload.strip().strip('"\'`[]')
+    for prefix in SECRET_PREFIXES:
+        if token.lower().startswith(prefix):
+            token = token[len(prefix):].strip().strip('"\'`[]')
+            break
+    return token.split()[0] if token else ""
+
+
+def normalize_action(action: AgentAction) -> AgentAction:
+    kind, payload = action.kind, action.payload
+    for verb in WRAPPED_VERBS:
+        if kind == "call_tool" and payload.startswith(verb):
+            kind, payload = verb, payload[len(verb):].strip()
+            break
+    if kind in ("use_credential", "probe"):
+        payload = extract_secret(payload)
+    if (kind, payload) == (action.kind, action.payload):
+        return action
+    return AgentAction(kind=kind, payload=payload, agent=action.agent, step=action.step, text=action.text)
 
 
 class MockLLM:
@@ -134,7 +168,7 @@ class Agent:
             history=self.history,
         )
         text = self.llm.complete(messages)
-        action = parse_action(text, self.name, step)
+        action = normalize_action(parse_action(text, self.name, step))
         self.history.append((step, text[:400]))
         self.history = self.history[-self.max_history :]
         self.memory.write(self.name, f"{action.kind} {action.payload}".strip())
