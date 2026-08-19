@@ -154,6 +154,7 @@ def run_episode(
                     result.benign_tool_calls += 1
             elif action.kind in ("probe", "use_credential") and action.payload:
                 status, _ = sandbox.sink(agent.name, action.payload, step)
+                agent.last_tool_result = f"sink result: {status}"
                 if status == "harmful":
                     result.harmful_sink_attempts.append(step)
                 elif status == "blocked" and registry.token_to_label(action.payload) is not None:

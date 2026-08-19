@@ -65,4 +65,12 @@ for f in sorted(glob.glob("results/*/*.json")):
     d = json.load(open(f))
     keys = {k: d[k] for k in ("condition","seeds","activation_rate","attack_coverage","benign_fpr","benign_success","post_trigger_harm","contagion")}
     print(os.path.basename(os.path.dirname(f)), json.dumps(keys))
+for tag in ("high_high", "containment_high"):
+    eps = sorted(glob.glob(f"results/{tag}/episodes/*/*.json"))
+    if eps:
+        d = json.load(open(eps[0]))
+        print(f"== trace sample: {tag} ({os.path.basename(eps[0])}) ==")
+        atk = [t for t in d.get("trace", []) if t["role"] == "attacker"][:10]
+        for t in atk:
+            print("   ", t)
 PY
