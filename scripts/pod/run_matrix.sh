@@ -68,6 +68,7 @@ python scripts/run_experiment.py \
   --seeds "$SEEDS" \
   --episodes "$EPISODES" \
   --backend vllm \
+  --attacker-mode llm \
   --base-url "http://localhost:$PORT/v1" \
   --model "$MODEL" \
   --out results

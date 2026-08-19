@@ -59,6 +59,8 @@ def main() -> None:
     parser.add_argument("--base-url", default="http://localhost:8000/v1")
     parser.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507")
     parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
+    parser.add_argument("--attacker-mode", choices=["scripted", "llm"], default="scripted",
+                        help="scripted=deterministic smoke; llm=real model-driven attackers")
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
 
@@ -81,7 +83,7 @@ def main() -> None:
         for seed in parse_seeds(args.seeds):
             for episode in range(args.episodes):
                 record = records.get((name, seed, episode))
-                results.append(run_episode(cfg, seed, episode, record=record, llm_factory=backend, attacker_intents=intents))
+                results.append(run_episode(cfg, seed, episode, record=record, llm_factory=backend, attacker_intents=intents, attacker_mode=args.attacker_mode))
         report = summarize(results)
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
