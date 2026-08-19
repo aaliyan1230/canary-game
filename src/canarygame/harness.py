@@ -60,6 +60,7 @@ def run_episode(
     llm_factory=MockLLM,
     attacker_intents: list[str] | None = None,
     attacker_mode: str = "scripted",
+    record_trace: bool = False,
 ) -> EpisodeResult:
     record = record or build_mock_record(cfg, seed, episode)
     result = EpisodeResult(condition=cfg.name, seed=seed, episode=episode)
@@ -126,6 +127,17 @@ def run_episode(
             if quarantine is not None and quarantine.is_quarantined(agent.name, step):
                 continue
             action, event = agent.act(role, episode, step)
+            if record_trace:
+                result.trace.append(
+                    {
+                        "step": step,
+                        "agent": agent.name,
+                        "role": role,
+                        "kind": action.kind,
+                        "payload": action.payload[:120],
+                        "trigger": bool(event),
+                    }
+                )
             if event is not None:
                 result.triggers.append(event)
                 result.triggered_agents.append(agent.name)

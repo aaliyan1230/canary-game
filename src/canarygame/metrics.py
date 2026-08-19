@@ -15,6 +15,7 @@ class EpisodeResult:
     blocked_decoy_attempts: list = field(default_factory=list)
     shared_fingerprints: list = field(default_factory=list)
     triggered_agents: list = field(default_factory=list)
+    trace: list = field(default_factory=list)
     benign_success: float = 0.0
     benign_false_alarms: int = 0
     steps: int = 0
