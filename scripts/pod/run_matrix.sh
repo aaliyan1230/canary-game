@@ -57,7 +57,13 @@ done
 if ! curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
   echo "vLLM failed to come up" >&2
   tail -40 /tmp/vllm.log >&2 || true
-  kill "$VPID" 2>/dev/null || true
+kill "$VPID" 2>/dev/null || true
+
+echo "== archiving results (results_archive/) =="
+ARCHIVE="results_archive/$(date -u +%Y%m%dT%H%M%SZ)"
+mkdir -p "$ARCHIVE"
+cp -r results/* "$ARCHIVE"/ 2>/dev/null || true
+echo "archived to $ARCHIVE"
   exit 1
 fi
 echo "vLLM ready"
