@@ -14,6 +14,7 @@ class AgentAction:
     payload: str = ""
     agent: str = ""
     step: int = -1
+    text: str = ""
 
 
 @dataclass(frozen=True)

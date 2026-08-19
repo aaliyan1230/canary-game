@@ -135,6 +135,7 @@ def run_episode(
                     payload=f"{action.kind} {action.payload}".strip(),
                     agent=action.agent,
                     step=action.step,
+                    text=action.text,
                 )
             if record_trace:
                 result.trace.append(
@@ -145,6 +146,7 @@ def run_episode(
                         "kind": action.kind,
                         "payload": action.payload[:120],
                         "trigger": bool(event),
+                        "text": getattr(action, "text", "")[:200],
                     }
                 )
             if event is not None:

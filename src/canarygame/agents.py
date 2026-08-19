@@ -18,9 +18,9 @@ ACTION_RE = re.compile(r"^(\w+)\s*(.*)$")
 def parse_action(text: str, agent: str, step: int) -> AgentAction:
     match = ACTION_RE.match(text.strip().splitlines()[0])
     if match is None:
-        return AgentAction(kind="noop", agent=agent, step=step)
+        return AgentAction(kind="noop", agent=agent, step=step, text=text[:400])
     kind, payload = match.group(1), match.group(2).strip()
-    return AgentAction(kind=kind, payload=payload, agent=agent, step=step)
+    return AgentAction(kind=kind, payload=payload, agent=agent, step=step, text=text[:400])
 
 
 class MockLLM:
