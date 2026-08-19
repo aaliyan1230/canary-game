@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CanaryGame — progress</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #171d24; --panel2: #1d252e; --line: #2a3440;
+    --text: #e6edf3; --muted: #9aa7b4; --accent: #ffb454; --green: #3fb950;
+    --red: #f85149; --blue: #58a6ff; --purple: #bc8cff; --teal: #39c5cf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 32px 20px 64px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 26px; letter-spacing: .3px; }
+  .sub { color: var(--muted); margin: 6px 0 28px; font-size: 14px; }
+  .badge { display:inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px;
+    font-weight: 600; vertical-align: 2px; }
+  .b-done { background: rgba(63,185,80,.15); color: var(--green); }
+  .b-now  { background: rgba(255,180,84,.15); color: var(--accent); }
+  .b-next { background: rgba(88,166,255,.15); color: var(--blue); }
+  .b-block{ background: rgba(248,81,73,.15); color: var(--red); }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px 22px; margin: 18px 0; }
+  .card h2 { font-size: 17px; margin-bottom: 12px; }
+
+  /* timeline */
+  .tl { position: relative; margin: 6px 0 4px; padding-left: 26px; }
+  .tl::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--line); }
+  .tl-item { position: relative; padding: 0 0 20px; }
+  .tl-item:last-child { padding-bottom: 4px; }
+  .tl-item::before { content: ""; position: absolute; left: -24px; top: 5px; width: 12px;
+    height: 12px; border-radius: 50%; background: var(--bg); border: 2.5px solid var(--line); }
+  .tl-item.done::before { border-color: var(--green); background: var(--green); }
+  .tl-item.now::before { border-color: var(--accent); background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(255,180,84,.18); }
+  .tl-item.next::before { border-color: var(--blue); }
+  .tl-item h3 { font-size: 15px; margin-bottom: 2px; }
+  .tl-item .when { color: var(--muted); font-size: 12px; }
+  .tl-item p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .tl-item .chip { font-size: 12px; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .4px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .g { color: var(--green); } .r { color: var(--red); } .a { color: var(--accent); }
+  .legend { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 680px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .kpi { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; }
+  .kpi .v { font-size: 22px; font-weight: 700; }
+  .kpi .l { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  .gloss dt { font-weight: 600; color: var(--text); margin-top: 8px; }
+  .gloss dd { color: var(--muted); font-size: 13.5px; }
+  .foot { color: var(--muted); font-size: 12px; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>CanaryGame — where we are <span class="badge b-now">day 1 of ~2 weeks</span></h1>
+  <div class="sub">Question being tested: when agents share memory, does one attacker's discovery of a planted trap "infect" the others and break detection? And can a small safeguard undo that? Paper due <b>Aug 29</b> (NeurIPS workshop).</div>
+
+  <div class="card">
+    <h2>Where we started → where we stand</h2>
+    <div class="tl">
+      <div class="tl-item done">
+        <h3>Kickoff + design</h3>
+        <div class="when">Aug 19</div>
+        <p>11 design decisions locked. Everything stays <b>local &amp; synthetic</b> — fake credentials, no real systems, safe to run.</p>
+      </div>
+      <div class="tl-item done">
+        <h3>Phase 1 — built the test scenarios <span class="chip">(60 scenarios)</span></h3>
+        <div class="when">Aug 19</div>
+        <p>Real everyday business tasks (from τ³-bench) run against our fake files. Decoys planted and verified <b>indistinguishable</b> from real-looking credentials (an AI judge could only spot them 15% of the time).</p>
+      </div>
+      <div class="tl-item done">
+        <h3>Phase 2 — first real runs on open models</h3>
+        <div class="when">Aug 19</div>
+        <p>Full pipeline working on <b>Qwen3-4B</b> on a rented GPU. Fixed a bug: attackers were stuck repeating the same action because they never saw what their action did.</p>
+      </div>
+      <div class="tl-item done">
+        <h3>Core matrix — all 4 conditions <span class="chip">(40 episodes)</span></h3>
+        <div class="when">Aug 19</div>
+        <p>Every condition run 10 times with fresh randomness. Headline results below.</p>
+      </div>
+      <div class="tl-item done">
+        <h3>Intent &amp; attacker-count sweep <span class="chip">(16 episodes)</span></h3>
+        <div class="when">Aug 19</div>
+        <p>Proved the "intent dial" is a real control: mean-spirited attackers do damage, casual ones do nothing.</p>
+      </div>
+      <div class="tl-item now">
+        <h3>Now — tightening the numbers <span class="chip">sweep v2, more seeds</span></h3>
+        <div class="when">current</div>
+        <p>Rerunning the sweep with more randomness to make the confidence intervals crisp and confirm a new finding (details below).</p>
+      </div>
+      <div class="tl-item next">
+        <h3>Next — robustness, then the paper</h3>
+        <div class="when">before Aug 29</div>
+        <p>Second model as a check (blocked on a license), one bigger-model sanity run, then outline + figures for the 4-page paper.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>The experiment in one line</h2>
+    <p style="color:var(--muted)">We plant <b>decoy credentials</b> (fake passwords that look real) next to real ones. If an agent uses one, the trap fires — we catch it. We then compare four ways of running the agents:</p>
+    <div class="grid2" style="margin-top:14px">
+      <div class="kpi"><div class="l">1. <b>Baseline</b> — agents work alone, no shared notes</div></div>
+      <div class="kpi"><div class="l">2. <b>Coalition</b> — agents share notes through common memory</div></div>
+      <div class="kpi"><div class="l">3. <b>Rotation</b> — decoys change every round</div></div>
+      <div class="kpi"><div class="l">4. <b>Containment</b> — a "broker" issues real access; decoys are useless</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Results (10 runs per condition)</h2>
+    <table>
+      <tr><th>Condition</th><th>Caught attackers</th><th>Damage done</th><th>Infects others?</th><th>Harm to honest work</th></tr>
+      <tr><td><b>Baseline</b> (alone)</td><td>40%</td><td class="num">12.8</td><td class="num">none</td><td>~0%</td></tr>
+      <tr><td><b>Coalition</b> (sharing)</td><td>40%</td><td class="num a">16.0</td><td class="num a">yes — 16.0</td><td>~2%</td></tr>
+      <tr><td><b>Rotation</b> (new decoys)</td><td>30%</td><td class="num a">16.9 when hit</td><td class="num a">yes</td><td>0%</td></tr>
+      <tr><td><b>Containment</b> (broker)</td><td class="g">50% — best</td><td class="num g">0.0 — zero</td><td class="num">blocked</td><td>~0.5%</td></tr>
+    </table>
+    <p class="legend">Damage is a scored number from the sandbox — higher is worse. Sharing memory lets attacks <i>spread</i> to other agents (contagion). The broker blocks every misuse, so even when the trap catches an attacker, <b>no damage happens</b>.</p>
+  </div>
+
+  <div class="card">
+    <h2>Bonus findings from today</h2>
+    <div class="grid2">
+      <div class="kpi"><div class="v">✓</div><div class="l"><b>Intent dial works.</b> Attackers told to "just look around" do nothing. Attackers told to "find credentials, open the vault, coordinate" get caught 50–100% of the time.</div></div>
+      <div class="kpi"><div class="v">!</div><div class="l"><b>New story:</b> in heavy-attack runs, the shared pool fills with attacker fingerprints and <b>honest agents stumble too</b> (false alarms rise to ~6–14%, task success drops). "Contagion costs honest work." Needs more runs to confirm.</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What's on the plate now</h2>
+    <div class="tl">
+      <div class="tl-item now">
+        <h3>Sweep v2 <span class="badge b-now">doing now</span></h3>
+        <p>More random seeds to shrink the uncertainty bars and confirm the "contagion hurts honest work" finding.</p>
+      </div>
+      <div class="tl-item block">
+        <h3>Second model check (Gemma-3-4B) <span class="badge b-block">blocked on you</span></h3>
+        <p>Need you to accept the Gemma license on huggingface.co (one click) so we can download it.</p>
+      </div>
+      <div class="tl-item next">
+        <h3>One bigger-model sanity run <span class="badge b-next">planned</span></h3>
+        <p>A single check with an 8B model to make sure the findings aren't an artifact of the small model.</p>
+      </div>
+      <div class="tl-item next">
+        <h3>Paper outline + figures <span class="badge b-next">Aug 26-ish</span></h3>
+        <p>Turn the two result sets into the 4-page write-up. Deadline Aug 29.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Jargon, in plain words</h2>
+    <dl class="gloss">
+      <dt>Honeytoken / decoy</dt><dd>A fake credential planted on purpose. Anyone who uses it gets caught — it's a tripwire, not a real password.</dd>
+      <dt>Trap activation</dt><dd>An attacker actually using a decoy. ("Caught attackers" above.)</dd>
+      <dt>Harm</dt><dd>Scored damage in the sandbox — using a credential you weren't allowed to. Only affects fake state, nothing real.</dd>
+      <dt>Contagion</dt><dd>One attacker's knowledge of the traps spreading to other agents through shared memory.</dd>
+      <dt>Broker</dt><dd>The only legitimate way to get access; it hands out real credentials and blocks decoy use, so abuse is impossible.</dd>
+      <dt>False positive rate (FPR)</dt><dd>How often an <i>honest</i> agent gets mistaken for an attacker. Our ~0–2% beats the 25–53% of existing detection methods.</dd>
+      <dt>Confidence interval (CI)</dt><dd>The range the true number probably sits in. Narrow = trustworthy. Today most are wide because runs are few.</dd>
+      <dt>τ³-bench</dt><dd>A published set of realistic business chores (retail, airline, banking) we borrowed for the honest agents' tasks.</dd>
+    </dl>
+  </div>
+
+  <div class="foot">Everything here ran on fake credentials in a local sandbox — nothing real was touched. Budget so far ≈ a few GPU launches, well inside the 12–15 GPU-hour cap.</div>
+</div>
+</body>
+</html>
