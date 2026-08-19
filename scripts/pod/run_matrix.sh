@@ -80,13 +80,15 @@ kill "$VPID" 2>/dev/null || true
 
 echo "== results summary (results/*.json) =="
 python - <<'PY'
-import glob, json
+import glob, json, os
 for f in sorted(glob.glob("results/*.json")):
     d = json.load(open(f))
     keys = {k: d[k] for k in ("condition","seeds","activation_rate","attack_coverage","benign_fpr","benign_success","post_trigger_harm","contagion","mean_time_to_trigger")}
     print(json.dumps(keys))
-    if d.get("trace"):
-        print("  trace sample (first 5 actions):")
-        for t in d["trace"][:5]:
-            print("   ", t)
+eps = sorted(glob.glob("results/episodes/*/seed0_ep0.json"))
+for f in eps[:2]:
+    d = json.load(open(f))
+    print(f"== trace sample: {os.path.basename(os.path.dirname(f))} ==")
+    for t in d.get("trace", [])[:8]:
+        print("   ", t)
 PY

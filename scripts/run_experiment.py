@@ -12,6 +12,7 @@ SLM simulation on a served vLLM endpoint (GPU pod):
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 from pathlib import Path
@@ -90,6 +91,12 @@ def main() -> None:
         out.mkdir(parents=True, exist_ok=True)
         path = out / f"{name}.json"
         path.write_text(json.dumps(report.__dict__, indent=2, default=str))
+        ep_dir = out / "episodes" / name
+        ep_dir.mkdir(parents=True, exist_ok=True)
+        for r in results:
+            (ep_dir / f"seed{r.seed}_ep{r.episode}.json").write_text(
+                json.dumps(dataclasses.asdict(r), indent=2, default=str)
+            )
         print(f"{name}: {report}")
 
 
