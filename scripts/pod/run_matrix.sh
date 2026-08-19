@@ -8,7 +8,7 @@
 # condition slice, (4) print results. The pod is stopped by run.sh's trap.
 set -euo pipefail
 
-MODEL="${CANARY_MODEL:-Qwen/Qwen3-4B-Instruct}"
+MODEL="${CANARY_MODEL:-Qwen/Qwen3-4B-Instruct-2507}"
 PORT="${CANARY_PORT:-8000}"
 CONDITIONS="${CANARY_CONDITIONS:-baseline,coalition,containment}"
 SEEDS="${CANARY_SEEDS:-0-1}"

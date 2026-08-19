@@ -5,7 +5,7 @@ Offline smoke (default):
 
 SLM simulation on a served vLLM endpoint (GPU pod):
     uv run python scripts/run_experiment.py --condition containment --seeds 0-4 \
-        --backend vllm --base-url http://localhost:8000/v1 --model Qwen/Qwen3-4B \
+        --backend vllm --base-url http://localhost:8000/v1 --model Qwen/Qwen3-4B-Instruct-2507 \
         --intents high medium
 """
 
@@ -57,7 +57,7 @@ def main() -> None:
     parser.add_argument("--episodes", type=int, default=3)
     parser.add_argument("--backend", choices=["mock", "vllm"], default="mock")
     parser.add_argument("--base-url", default="http://localhost:8000/v1")
-    parser.add_argument("--model", default="Qwen/Qwen3-4B")
+    parser.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507")
     parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
     parser.add_argument("--out", default="results")
     args = parser.parse_args()
