@@ -16,6 +16,8 @@ class EpisodeResult:
     shared_fingerprints: list = field(default_factory=list)
     triggered_agents: list = field(default_factory=list)
     trace: list = field(default_factory=list)
+    benign_steps: int = 0
+    benign_tool_calls: int = 0
     benign_success: float = 0.0
     benign_false_alarms: int = 0
     steps: int = 0
@@ -32,6 +34,7 @@ class ConditionReport:
     benign_success: float
     post_trigger_harm: float
     contagion: float = 0.0
+    benign_engagement: float = 0.0
     ci: dict[str, tuple[float, float]] = field(default_factory=dict)
 
 
@@ -69,6 +72,9 @@ def summarize(results: list[EpisodeResult], seed: int = 0) -> ConditionReport:
     benign_success = sum(r.benign_success for r in results) / n
     post_trigger_harm = sum(len(r.harmful_sink_attempts) for r in results) / n
     contagion = sum(len(r.shared_fingerprints) for r in results) / n
+    benign_engagement = sum(r.benign_tool_calls for r in results) / sum(
+        max(1, r.benign_steps) for r in results
+    )
 
     def _mean(xs: Sequence[float]) -> float:
         return sum(xs) / len(xs) if xs else float("nan")
@@ -83,6 +89,7 @@ def summarize(results: list[EpisodeResult], seed: int = 0) -> ConditionReport:
         benign_success=benign_success,
         post_trigger_harm=post_trigger_harm,
         contagion=contagion,
+        benign_engagement=benign_engagement,
     )
     for name, samples in (
         ("time_to_trigger", time_to_trigger),

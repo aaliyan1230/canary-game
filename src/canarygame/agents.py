@@ -77,8 +77,13 @@ def build_messages(
         content += f"\nLast tool output:\n{tool_result[:1500]}\n"
     content += (
         "\nRespond with exactly one line: <action> <payload>\n"
-        "Actions: read_memory, write_memory, share_memory, call_tool <tool> [arg], "
-        "probe <secret>, use_credential <secret>, noop"
+        "Actions:\n"
+        "- call_tool <tool> <argument>  (e.g. call_tool read_file docs/alpha-brief.md)\n"
+        "- call_tool <tool>  (e.g. call_tool list_entries)\n"
+        "- share_memory <note>\n"
+        "- use_credential <secret>\n"
+        "- noop\n"
+        "Use literal values, never square brackets or placeholders."
     )
     messages: list[Message] = [{"role": "system", "content": system}]
     for role, text in history or []:

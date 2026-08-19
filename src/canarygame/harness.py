@@ -124,6 +124,8 @@ def run_episode(
 
     for step in range(cfg.max_steps):
         for agent, role in agents:
+            if role == "benign":
+                result.benign_steps += 1
             if quarantine is not None and quarantine.is_quarantined(agent.name, step):
                 continue
             action, event = agent.act(role, episode, step)
@@ -148,6 +150,8 @@ def run_episode(
             if action.kind == "call_tool":
                 tool, _, arg = action.payload.partition(" ")
                 agent.last_tool_result = sandbox.execute_tool(agent.name, tool, arg)
+                if role == "benign":
+                    result.benign_tool_calls += 1
             elif action.kind in ("probe", "use_credential") and action.payload:
                 status, _ = sandbox.sink(agent.name, action.payload, step)
                 if status == "harmful":

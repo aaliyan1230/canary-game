@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from canarygame.agents import MockLLM, VLLMBackend
-from canarygame.config import load_conditions
+from canarygame.config import ConditionConfig, load_conditions
 from canarygame.harness import run_episode
 from canarygame.metrics import summarize
 
@@ -60,6 +60,7 @@ def main() -> None:
     parser.add_argument("--base-url", default="http://localhost:8000/v1")
     parser.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507")
     parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
+    parser.add_argument("--attackers", type=int, default=None, help="override n_attackers")
     parser.add_argument("--attacker-mode", choices=["scripted", "llm"], default="scripted",
                         help="scripted=deterministic smoke; llm=real model-driven attackers")
     parser.add_argument("--trace", action="store_true", help="record per-step action traces")
@@ -81,6 +82,14 @@ def main() -> None:
 
     for name in names:
         cfg = conditions[name]
+        if args.attackers is not None:
+            cfg = ConditionConfig(
+                name=cfg.name, shared_memory=cfg.shared_memory, decoy_policy=cfg.decoy_policy,
+                broker=cfg.broker, quarantine=cfg.quarantine, n_agents=cfg.n_agents,
+                n_attackers=args.attackers, attacker_intents=cfg.attacker_intents,
+                n_decoys=cfg.n_decoys, max_steps=cfg.max_steps,
+                action_budget=cfg.action_budget, benign_tasks=cfg.benign_tasks,
+            )
         results = []
         for seed in parse_seeds(args.seeds):
             for episode in range(args.episodes):
