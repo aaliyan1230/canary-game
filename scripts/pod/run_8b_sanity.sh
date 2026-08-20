@@ -27,26 +27,30 @@ for f in sorted(glob.glob("results_archive/*/*/*.json")):
 PY
 
 echo "== serving $MODEL on :$PORT =="
-export HF_HUB_ENABLE_HF_TRANSFER=0
-python - "$MODEL" <<'PY'
+if curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
+  echo "reusing existing vLLM server on :$PORT"
+else
+  export HF_HUB_ENABLE_HF_TRANSFER=0
+  python - "$MODEL" <<'PY'
 import sys
 from huggingface_hub import snapshot_download
 print("model cached at", snapshot_download(sys.argv[1]))
 PY
-nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 16384 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
-VPID=$!
-for _ in $(seq 1 240); do
-  if curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then break; fi
-  sleep 5
-  tail -n 2 /tmp/vllm.log 2>/dev/null || true
-done
-if ! curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
-  echo "vLLM failed to come up" >&2
-  tail -40 /tmp/vllm.log >&2 || true
-  kill "$VPID" 2>/dev/null || true
-  exit 1
+  nohup vllm serve "$MODEL" --port "$PORT" --max-model-len 16384 --gpu-memory-utilization 0.9 >/tmp/vllm.log 2>&1 &
+  VPID=$!
+  for _ in $(seq 1 240); do
+    if curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then break; fi
+    sleep 5
+    tail -n 2 /tmp/vllm.log 2>/dev/null || true
+  done
+  if ! curl -sf "http://localhost:$PORT/v1/models" >/dev/null; then
+    echo "vLLM failed to come up" >&2
+    tail -40 /tmp/vllm.log >&2 || true
+    kill "$VPID" 2>/dev/null || true
+    exit 1
+  fi
+  echo "vLLM ready"
 fi
-echo "vLLM ready"
 
 OUT="results/8b_sanity"
 mkdir -p "$OUT"
@@ -54,12 +58,12 @@ for cond in coalition containment; do
   echo "== 8B $cond =="
   python scripts/run_experiment.py \
     --condition "$cond" --seeds "$SEEDS" --episodes "$EPISODES" \
-    --backend vllm --attacker-mode llm --trace \
+    --backend vllm --attacker-mode llm --trace --no-thinking \
     --base-url "$BASE" --model "$MODEL" \
     --out "$OUT/$cond"
 done
 
-kill "$VPID" 2>/dev/null || true
+if [ -n "${VPID:-}" ]; then kill "$VPID" 2>/dev/null || true; fi
 
 echo "== archiving (results_archive/) =="
 ARCHIVE="results_archive/$(date -u +%Y%m%dT%H%M%SZ)"

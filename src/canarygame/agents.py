@@ -72,19 +72,30 @@ class MockLLM:
 class VLLMBackend:
     """OpenAI-compatible client for a served vLLM endpoint (offline pod)."""
 
-    def __init__(self, base_url: str, model: str, temperature: float = 0.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        temperature: float = 0.0,
+        chat_template_kwargs: dict | None = None,
+    ) -> None:
         from openai import OpenAI
 
         self.client = OpenAI(base_url=base_url, api_key="not-needed")
         self.model = model
         self.temperature = temperature
+        self.chat_template_kwargs = chat_template_kwargs
 
     def complete(self, messages: list[Message]) -> str:
+        kwargs = {}
+        if self.chat_template_kwargs:
+            kwargs["extra_body"] = {"chat_template_kwargs": self.chat_template_kwargs}
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=self.temperature,
             max_tokens=256,
+            **kwargs,
         )
         return resp.choices[0].message.content or ""
 

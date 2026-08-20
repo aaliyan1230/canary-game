@@ -62,6 +62,8 @@ def main() -> None:
     parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
     parser.add_argument("--attackers", type=int, default=None, help="override n_attackers")
     parser.add_argument("--max-steps", type=int, default=None, help="override per-episode step budget")
+    parser.add_argument("--no-thinking", action="store_true",
+                        help="disable chat-template thinking mode (Qwen3 non-2507 family)")
     parser.add_argument("--attacker-mode", choices=["scripted", "llm"], default="scripted",
                         help="scripted=deterministic smoke; llm=real model-driven attackers")
     parser.add_argument("--trace", action="store_true", help="record per-step action traces")
@@ -75,7 +77,8 @@ def main() -> None:
         names = [c.strip() for c in args.condition.split(",")]
 
     if args.backend == "vllm":
-        backend = lambda script: VLLMBackend(base_url=args.base_url, model=args.model)
+        kwargs = {"chat_template_kwargs": {"enable_thinking": False}} if args.no_thinking else {}
+        backend = lambda script: VLLMBackend(base_url=args.base_url, model=args.model, **kwargs)
     else:
         backend = MockLLM
     intents = args.intents.split(",") if args.intents else None
