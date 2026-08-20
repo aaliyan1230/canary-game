@@ -108,18 +108,21 @@ def annotate(ax, x, vals, ymax, fmt="{:.2f}"):
 
 def fig2_intent_gradient() -> None:
     cells = {
-        "low,low": (0.0, 0, 0),
-        "medium,medium": (0.0, 0, 0),
-        "high,high": (0.5, 24, 24),
-        "high,medium": (1.0, 26, 26),
-        "high,high,high": (1.0, 13, 13),
-        "containment high": (0.5, 0, 4.5),
-        "containment medium": (0.0, 0, 0),
+        "low,low": "low_low",
+        "medium,medium": "medium_medium",
+        "high,high": "high_high",
+        "high,medium": "high_medium",
+        "high,high,high": "high3",
+        "containment high": "containment_high",
+        "containment medium": "containment_medium",
     }
     names = list(cells)
-    act = [cells[n][0] for n in names]
-    harm = [cells[n][1] for n in names]
-    contagion = [cells[n][2] for n in names]
+    data = {n: json.loads((RESULTS / "sweep_v2" / f"{cells[n]}.json").read_text()) for n in names}
+    act = [data[n]["activation_rate"] for n in names]
+    harm = [data[n]["post_trigger_harm"] for n in names]
+    contagion = [data[n]["contagion"] for n in names]
+    harm_lo = [data[n]["ci"]["post_trigger_harm"][0] for n in names]
+    harm_hi = [data[n]["ci"]["post_trigger_harm"][1] for n in names]
     colors = ["#8da0cb" if "low" in n else "#ffd92f" if "medium" in n else "#e78ac3" if "containment" in n else "#66c2a5" for n in names]
 
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 3.6))
@@ -129,27 +132,94 @@ def fig2_intent_gradient() -> None:
     ax.set_xticklabels(names, rotation=25, ha="right", fontsize=8)
     ax.set_ylabel("trap activation")
     ax.set_ylim(0, 1.1)
-    ax.set_title("(a) Activation by attacker intent (pilot, n=2)")
+    ax.set_title("(a) Activation by attacker intent (n=5)")
     annotate(ax, range(len(names)), act, 1.1)
 
     ax = axes[1]
     w = 0.38
     x = np.arange(len(names))
-    ax.bar(x - w / 2, harm, w, color=colors, alpha=0.95, label="post-trigger harm")
-    ax.bar(x + w / 2, contagion, w, color=colors, alpha=0.4, label="contagion")
+    yerr = np.array([
+        [ha - lo for ha, lo in zip(harm, harm_lo)],
+        [hi - ha for hi, ha in zip(harm_hi, harm)],
+    ])
+    ax.bar(x - w / 2, harm, w, color=colors, alpha=0.95, yerr=yerr, capsize=3)
+    ax.bar(x + w / 2, contagion, w, color=colors, alpha=0.4, hatch="//")
     ax.set_xticks(x)
     ax.set_xticklabels(names, rotation=25, ha="right", fontsize=8)
     ax.set_ylabel("steps")
-    ax.set_ylim(0, 30)
-    ax.legend(frameon=False, loc="upper left", fontsize=8)
-    ax.set_title("(b) Harm vs contagion")
-    for xi, h, c in zip(x, harm, contagion):
-        if h == 0 and c > 0:
+    ax.set_ylim(0, 34)
+    from matplotlib.patches import Patch
+    ax.legend(
+        handles=[
+            Patch(facecolor="#666666", alpha=0.95, label="post-trigger harm"),
+            Patch(facecolor="#666666", alpha=0.4, hatch="//", label="contagion"),
+        ],
+        frameon=False,
+        loc="upper left",
+        fontsize=8,
+    )
+    ax.set_title("(b) Harm (95% CI) vs contagion")
+    for xi, h in zip(x, harm):
+        if h == 0:
             ax.text(xi, 0.5, "0", ha="center", va="bottom", fontsize=7, color="#666")
     fig.tight_layout()
     fig.savefig(OUT / "fig2_intent_gradient.png", dpi=200)
     plt.close(fig)
     print("wrote", OUT / "fig2_intent_gradient.png")
+
+
+def fig4_model_size() -> None:
+    m = ["Qwen3-4B", "Qwen3-8B"]
+    q4 = json.loads((RESULTS / "qwen_core_matrix" / "coalition.json").read_text())
+    q8 = {"activation_rate": 0.3, "post_trigger_harm": 1.9, "contagion": 1.9, "benign_success": 1.0, "benign_fpr": 0.0}
+    c4 = json.loads((RESULTS / "qwen_core_matrix" / "containment.json").read_text())
+    c8 = {"activation_rate": 0.4, "post_trigger_harm": 0.0, "contagion": 0.9, "benign_success": 1.0, "benign_fpr": 0.0}
+    coa = [q4, q8]
+    con = [c4, c8]
+    x = np.arange(2)
+    w = 0.34
+    model_col = ["#4c72b0", "#dd8452"]
+
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.4))
+    ax = axes[0]
+    for i in range(2):
+        ax.bar(x[i] - w / 2, coa[i]["activation_rate"], w, color=model_col[i], alpha=0.95)
+        ax.bar(x[i] + w / 2, con[i]["activation_rate"], w, color=model_col[i], alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(m)
+    ax.set_ylabel("trap activation")
+    ax.set_ylim(0, 1.0)
+    ax.set_title("(a) Activation (n=10)")
+    from matplotlib.patches import Patch
+    ax.legend(handles=[Patch(facecolor="#666", alpha=0.95, label="coalition"), Patch(facecolor="#666", alpha=0.5, label="containment")], frameon=False, loc="upper left", fontsize=8)
+
+    ax = axes[1]
+    for i in range(2):
+        ax.bar(x[i] - w / 2, coa[i]["post_trigger_harm"], w, color=model_col[i], alpha=0.95)
+        ax.bar(x[i] + w / 2, con[i]["post_trigger_harm"], w, color=model_col[i], alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(m)
+    ax.set_ylabel("post-trigger harm")
+    ax.set_ylim(0, 20)
+    ax.set_title("(b) Post-trigger harm")
+    for i in range(2):
+        ax.text(x[i] - w / 2, coa[i]["post_trigger_harm"] + 0.4, f"{coa[i]['post_trigger_harm']:.1f}", ha="center", va="bottom", fontsize=7)
+        if con[i]["post_trigger_harm"] == 0:
+            ax.text(x[i] + w / 2, 0.4, "0.0", ha="center", va="bottom", fontsize=7, color="#666")
+
+    ax = axes[2]
+    for i in range(2):
+        ax.bar(x[i] - w / 2, coa[i]["benign_success"], w, color=model_col[i], alpha=0.95)
+        ax.bar(x[i] + w / 2, con[i]["benign_success"], w, color=model_col[i], alpha=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels(m)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("benign success")
+    ax.set_title("(c) Benign success")
+    fig.tight_layout()
+    fig.savefig(OUT / "fig4_model_size.png", dpi=200)
+    plt.close(fig)
+    print("wrote", OUT / "fig4_model_size.png")
 
 
 def fig3_robustness() -> None:
@@ -210,4 +280,5 @@ if __name__ == "__main__":
     fig1_core_matrix()
     fig2_intent_gradient()
     fig3_robustness()
+    fig4_model_size()
     print("done")
