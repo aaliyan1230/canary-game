@@ -28,4 +28,9 @@ export CANARY_CONDITIONS="${CANARY_CONDITIONS:-baseline,coalition,rotation,conta
 export CANARY_SEEDS="${CANARY_SEEDS:-0-4}"
 export CANARY_EPISODES="${CANARY_EPISODES:-2}"
 export CANARY_TRACE="${CANARY_TRACE:-1}"
+if [ -n "${CANARY_STEPS:-}" ]; then
+  export RUN_ARGS="--max-steps $CANARY_STEPS"
+else
+  export RUN_ARGS=""
+fi
 bash scripts/pod/run_matrix.sh

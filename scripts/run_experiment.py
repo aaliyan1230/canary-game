@@ -61,6 +61,7 @@ def main() -> None:
     parser.add_argument("--model", default="Qwen/Qwen3-4B-Instruct-2507")
     parser.add_argument("--intents", default=None, help="comma list, e.g. high,medium")
     parser.add_argument("--attackers", type=int, default=None, help="override n_attackers")
+    parser.add_argument("--max-steps", type=int, default=None, help="override per-episode step budget")
     parser.add_argument("--attacker-mode", choices=["scripted", "llm"], default="scripted",
                         help="scripted=deterministic smoke; llm=real model-driven attackers")
     parser.add_argument("--trace", action="store_true", help="record per-step action traces")
@@ -82,6 +83,8 @@ def main() -> None:
 
     for name in names:
         cfg = conditions[name]
+        if args.max_steps is not None:
+            cfg = dataclasses.replace(cfg, max_steps=args.max_steps)
         if args.attackers is not None:
             cfg = ConditionConfig(
                 name=cfg.name, shared_memory=cfg.shared_memory, decoy_policy=cfg.decoy_policy,

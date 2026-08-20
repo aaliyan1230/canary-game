@@ -80,6 +80,10 @@ ARGS=(
   --out results
 )
 if [ "${CANARY_TRACE:-0}" = "1" ]; then ARGS+=(--trace); fi
+if [ -n "${RUN_ARGS:-}" ]; then
+  # shellcheck disable=SC2206
+  ARGS+=($RUN_ARGS)
+fi
 python scripts/run_experiment.py "${ARGS[@]}"
 
 kill "$VPID" 2>/dev/null || true
