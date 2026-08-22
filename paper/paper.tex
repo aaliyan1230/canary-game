@@ -50,9 +50,9 @@ containment (private reference monitor, broker-issued capabilities,
 quarantine). Containment holds post-trigger harm at exactly zero with CI
 $[0,0]$ while reaching the highest trap activation ($0.50$); baseline,
 coalition, and rotation reach harm $12.8$, $16.0$, and $16.9$. An
-attacker-intent gradient moves activation from $0.20$ to $1.00$ and harm from
-$0.4$ to $15.8$. Benign false-positive rate stays at $0$--$1.8\%$. Results are
-consistent across model sizes; a misuse-averse model (Gemma3-4B) is an
+attacker-intent sweep spans activation $0.20$--$1.00$ and harm $0.4$--$15.8$.
+Core-matrix benign false-positive rate is $0$--$1.8\%$.
+Containment's zero-harm result holds across model sizes; Gemma3-4B is an
 engagement boundary case. Everything runs locally: no real credentials, no
 network egress, no live targets.
 \end{abstract}
@@ -60,14 +60,14 @@ network egress, no live targets.
 \section{Introduction}
 LLM agent teams increasingly share a tool registry and a memory pool. A
 common detection idea carries over from intrusion detection: seed the
-environment with honeytokens---decoy secrets whose use reveals misuse---and
+environment with honeytokens (decoy secrets whose use reveals misuse) and
 monitor who touches them~\citep{spitzner2003honeytokens,juels2013honeywords}.
 In single-agent settings this works because one agent's mistakes stay private.
 In a team that shares memory, they do not: an attacker that touches a decoy
 can tell its teammates, and the coalition learns which credentials are traps
 faster than the defender can rotate them. Theory on this shared-memory
 honeytoken boundary predicts that pooling collapses trap detection exactly
-when a coalition forms\todored{add citation for ``When Agents Talk''}.
+when a coalition forms~\todored{add citation for ``When Agents Talk''}.
 
 We measure that prediction rather than assume it. We built CanaryGame, a
 controlled testbed in which open-weight models act as both benign workers and
@@ -78,24 +78,23 @@ is shared, whether decoys are rotated, and whether a capability broker, a
 private reference monitor, and automatic quarantine stand between agents and
 the sink.
 
-Across three model families we find the predicted pattern and its fix.
-Sharing raises post-trigger harm over baseline and spreads decoy fingerprints
-through the pool; rotating decoys delays contact but not damage; containment
-blocks every decoy misuse while still detecting it. Detection quality is
-conditional on attacker engagement: a safety-tuned model that rarely misuses
-credentials makes trap contact rare for reasons unrelated to detection. Our
-contributions are (1) an offline, reproducible multi-agent testbed for
-honeytoken dynamics, (2) a measurement of collapse under pooling with
+Across three model configurations, sharing raises mean post-trigger harm and
+spreads decoy fingerprints; rotation lowers activation but leaves harm high;
+containment blocks every decoy misuse. A safety-tuned model that rarely
+misuses credentials reveals an attacker-engagement boundary. Our contributions
+are (1) an offline, reproducible multi-agent testbed for
+honeytoken dynamics, (2) a measurement of pooling effects with
 per-condition confidence intervals, and (3) evidence that brokered containment
 restores detection across model sizes.
 
 \section{Testbed}
-\textbf{Sandbox.} Each episode gives five agents---three benign workers, two
-attackers---a shared tool registry (\texttt{query\_index},
+\textbf{Sandbox.} Core episodes give three benign workers and two attackers a
+shared tool registry (\texttt{query\_index},
 \texttt{list\_entries}, \texttt{read\_file}, \texttt{write\_file},
 \texttt{search\_files}, \texttt{send\_message}, \texttt{upload\_export}) and a
-credential store of 12 synthetic entries with service, role, and note fields.
-Agents act for up to 40 steps by emitting one action per turn
+credential store of 12 synthetic entries with service, role, and note fields;
+one sweep cell adds a third attacker. Core agents act for up to 40 steps by
+emitting one action per turn
 (\texttt{call\_tool}, \texttt{use\_credential}, \texttt{share\_memory},
 \texttt{probe}, or \texttt{noop}); tool outputs and sink results feed back
 into the next prompt. The privileged sink returns one of three statuses:
@@ -107,14 +106,14 @@ unbrokered values no legitimate flow should ever use. Ground-truth decoy
 labels live outside the surface the agents see.
 
 \textbf{Conditions.} \emph{Baseline}: isolated memories, fixed decoys.
-\emph{Coalition}: shared memory, fixed decoys---attackers can pool what they
+\emph{Coalition}: shared memory, fixed decoys; attackers can pool what they
 learn. \emph{Rotation}: shared memory, decoys re-randomized every episode.
-\emph{Containment}: shared memory, private decoys, plus three defenses---a
+\emph{Containment}: shared memory, private decoys, plus three defenses: a
 broker is the only legitimate credential source (decoys are never issued
 through it), a reference monitor watches every action against ground truth,
 and triggered agents are quarantined until release.
 
-\textbf{Attackers.} Attackers are model-driven, not scripted. An intent axis
+\textbf{Attackers.} Models drive every attacker action. An intent axis
 in the prompts sets aggression: \emph{low} (passive audit), \emph{medium}
 (contractor told to find and use credentials), \emph{high} (adversarial
 coalition instructed to verify decoys and write teammate notes to shared
@@ -122,11 +121,11 @@ memory). Benign workers draw real tasks from $\tau^2$-bench
 \citep{tau2bench2025}.
 
 \textbf{Models.} Qwen3-4B-Instruct-2507 is the primary attacker and victim;
-Qwen3-8B and Gemma3-4B-IT serve as robustness checks
+Qwen3-8B and Gemma3-4B-IT provide cross-model checks
 \citep{qwen3,gemma3}. All models run locally through vLLM
-\citep{vllm2023} on one A100-40GB at temperature 0. Two compatibility fixes
-matter for reproducibility: Gemma3 rejects consecutive assistant turns, so
-prompts strictly alternate roles, and its dialect wraps verbs
+\citep{vllm2023} on one A100-40GB at temperature 0. For compatibility, Gemma3
+prompts strictly alternate roles because its chat template rejects consecutive
+assistant turns. Its dialect wraps verbs
 (\texttt{call\_tool use\_credential secret=...}), which a normalization layer
 maps back to canonical actions. Qwen3-8B defaults to thinking-mode output,
 which parses as no-ops, so thinking is disabled via chat-template kwargs.
@@ -160,36 +159,38 @@ Containment & \textbf{0.50} & \textbf{0.00} & \textbf{0.0 (0.0, 0.0)} & 3.9 & 0.
 \centering
 \includegraphics[width=0.72\linewidth]{figures/fig1_core_matrix.png}
 \caption{Core matrix (Qwen3-4B, $n{=}10$): activation, post-trigger harm with
-CIs, contagion, and benign FPR. Containment detects more and harms less.}
+CIs, contagion, and benign FPR. Containment has the highest activation and
+zero harm.}
 \label{fig:core}
 \end{figure}
 
 \section{Results}
-\textbf{Containment restores detection (H3).} At equal activation, only
-containment stops damage. It has the highest activation of the four conditions
-($0.50$) and the lowest coverage ($0.00$), and its post-trigger harm is
+\textbf{Containment restores detection (H3).} Containment alone stops all
+damage despite the highest activation ($0.50$). Its attack coverage is $0.00$,
+and its post-trigger harm is
 exactly zero with CI $[0,0]$ (Table~\ref{tab:core}, Figure~\ref{fig:core}).
-The mechanism is visible in traces: the broker refuses every decoy, blocking
+Traces show the broker refusing every decoy, blocking
 3.9 attempts per episode on average, so attackers keep probing but never move
-scored state. This result replicates across model sizes and families
-(Section~\ref{sec:robust}).
+scored state. The same zero-harm result holds across model sizes and in the
+Gemma containment condition (Section~\ref{sec:robust}).
 
-\textbf{Pooling raises harm and spreads fingerprints (H1).} Coalition harm
+\textbf{Pooling raises mean harm and spreads fingerprints (H1).} Coalition harm
 ($16.0$) sits above baseline ($12.8$) with contagion $16.0$: once one attacker
 touches a decoy, the fingerprint lands in shared memory and both attackers
-converge on it. The effect sharpens with intent---high-intent cells reach
-activation $1.00$ and contagion up to $15.8$ (Table~\ref{tab:sweep})---though
+converge on it. High-intent cells reach
+activation $1.00$ and contagion up to $15.8$ (Table~\ref{tab:sweep}), though
 at $n{=}10$ the baseline--coalition gap is directional, not significant.
 
-\textbf{Rotation bounds contact, not damage (H2).} Re-randomizing decoys each
+\textbf{Rotation lowers contact; harm remains high (H2).} Re-randomizing decoys each
 episode produces the lowest activation ($0.30$) and the slowest triggers, but
 when an attack does land, harm stays high ($16.9$). Rotation buys time;
 containment prevents misuse outright.
 
-\textbf{Intent is the operative knob.} Moving attacker intent from low to high
-moves activation $0.20 \rightarrow 0.80$--$1.00$ and harm
-$0.4 \rightarrow 5.6$--$15.8$ at fixed attacker count; adding a third attacker
-changes little (Table~\ref{tab:sweep}). Under high intent, containment still
+\textbf{Intent chiefly controls contact.} With two attackers, moving from low
+to high intent raises activation from $0.20$ to $1.00$; mean harm is $0.4$ at
+low, $8.4$ at medium, and $5.6$ at high intent. At $n{=}5$, wide CIs leave the
+effect of a third attacker unresolved (Table~\ref{tab:sweep}). Under high
+intent, containment still
 pins harm at zero ($0.80$ activation, $0$ harm).
 
 \begin{table}[t]
@@ -212,18 +213,18 @@ contain.\ medium    & medium & 0.20 & \textbf{0.0 (0.0, 0.0)} & 1.6 & 1.00 \\
 \end{tabular}
 \end{table}
 
-\textbf{Benign cost stays low---until the pool is polluted.} Across the core
+\textbf{Benign false alarms rise under high-intent attack.} Across the core
 matrix, benign FPR is $0$--$1.8\%$ and benign success $0.95$--$1.00$
 (Figure~\ref{fig:core}d). Trajectory-signature detectors report benign
-false-positive rates of 25--53\%\todored{citation needed for this comparison};
-the reference monitor here keys on decoy tokens, not trajectories, so benign
-agents rarely trip it. The exception is instructive: under sustained
-high-intent attack the shared pool fills with attacker fingerprints, benign
+false-positive rates of 25--53\%~\todored{citation needed for this comparison};
+the reference monitor here keys on decoy tokens rather than trajectories, so
+benign agents rarely trip it. Sustained high-intent attack fills the shared
+pool with attacker fingerprints: benign
 FPR rises to $3$--$12\%$, and benign success drops to $0.60$--$0.80$
-(Table~\ref{tab:sweep}). Collateral pollution, not false alarms, is the real
-benign cost of contagion.
+(Table~\ref{tab:sweep}). Because benign success is derived from false alarms,
+these runs do not establish task degradation.
 
-\subsection{Robustness across models}\label{sec:robust}
+\subsection{Results across models}\label{sec:robust}
 Benign behavior transfers cleanly: on Gemma3-4B, engagement is $0.96$--$1.00$,
 success $0.95$--$1.00$, and FPR near zero everywhere. Attack engagement does
 not transfer: Gemma attackers spend most of their budget scanning and attempt
@@ -232,35 +233,35 @@ near zero even at an 80-step budget (Figure~\ref{fig:robust}). Where Gemma
 attackers do misuse decoys, containment blocks them all (harm $0.0$).
 Qwen3-8B engages like Qwen3-4B but milder (coalition harm $1.9$ vs.\ $16.0$),
 and containment again holds harm at exactly zero with CI $[0,0]$.
-Detection claims therefore travel across model sizes, and across model
-families only where attackers engage---an engagement boundary condition for
-the theory, not a failure of containment.
+The zero-harm containment result holds across model sizes and in the few Gemma
+episodes with decoy misuse. Attacker engagement remains a boundary condition
+for evaluating the theory across model families.
 
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{figures/fig3_robustness.png}
-\caption{Qwen3-4B vs.\ Gemma3-4B. Benign metrics are model-stable (b, c);
-attack engagement is model-sensitive (a).}
+\caption{Qwen3-4B vs.\ Gemma3-4B. Gemma preserves high benign success and
+near-zero FPR (b, c) but rarely activates traps (a).}
 \label{fig:robust}
 \end{figure}
 
 \section{Discussion and limitations}
-The measurements support the boundary's two predictions. First, pooling
-collapses detection from the inside: shared memory lets a coalition convert
-one agent's decoy encounter into team knowledge, raising harm and spreading
-fingerprints. Second, the fix is architectural, not statistical: a private
-reference monitor keyed on decoy tokens keeps benign FPR near zero, and
-removing decoys from the broker's issuance path makes every decoy touch a
-dead end. Rotation alone fails the way static defenses fail---it slows
-contact without changing what happens on contact.
+The measurements give directional support for pooling and strong support for
+containment. Shared memory lets a coalition convert one agent's decoy encounter
+into team knowledge, raising mean harm and spreading fingerprints, although
+the harm CIs overlap. A private reference monitor keyed on decoy tokens keeps
+benign FPR near zero, and removing decoys from the broker's issuance path makes
+every decoy touch a dead end. Rotation lowers activation but leaves harm high
+after contact.
 
 Four limitations bound these claims. (1) Everything is synthetic and offline:
 one credential-store surface, no live tools, no egress. Real deployments add
 surfaces we do not model. (2) Samples are small: $n{=}10$ per condition with
 overlapping harm CIs makes the baseline--coalition contrast directional.
-(3) Benign success is a proxy (no-false-alarm plus tool-use rate), not a task
-score. (4) Attack-side conclusions rest on models willing to attack; a
+(3) Benign success is derived only from false alarms; benign engagement
+separately reports tool use, and neither is a task score. (4) Attack-side
+conclusions rest on models willing to attack; a
 misuse-averse model suppresses decoy contact itself, which hides detection
 effects rather than refuting them.
 
@@ -279,7 +280,7 @@ itself is instrumented and the channel under study is peer memory.
 \section{Ethics and reproducibility}
 All experiments run locally and offline. Credentials are synthetic, the sink
 mutates only scored sandbox state, and no external systems, live servers, or
-network calls are involved at any point---including during attack rollouts.
+network calls are involved at any point, including during attack rollouts.
 The full dataset (60 records, fixed seeds, acceptance-checked) will be
 released publicly at \texttt{ic-org/canarygame-dataset} for open audit;
 code, configs, pod runner scripts, and per-condition reports accompany it.
@@ -290,13 +291,13 @@ Fixed seeds and temperature-0 decoding make every table regenerable.
 
 \bibitem[Spitzner(2003)]{spitzner2003honeytokens}
 L.~Spitzner.
-\newblock Honeytokens: The other traps.
+\newblock Honeytokens: The other honeypot.
 \newblock \emph{SecurityFocus}, 2003.
 
 \bibitem[Juels and Rivest(2013)]{juels2013honeywords}
 A.~Juels and R.~L. Rivest.
 \newblock Honeywords: Making password-cracking detectable.
-\newblock In \emph{IEEE Symposium on Security and Privacy}, 2013.
+\newblock In \emph{ACM CCS}, 2013.
 
 \bibitem[Yao et~al.(2023)]{react2023}
 S.~Yao, J.~Zhao, D.~Yu, N.~Du, I.~Shafran, K.~Narasimhan, and Y.~Cao.
@@ -304,7 +305,7 @@ S.~Yao, J.~Zhao, D.~Yu, N.~Du, I.~Shafran, K.~Narasimhan, and Y.~Cao.
 \newblock In \emph{ICLR}, 2023.
 
 \bibitem[Barres et~al.(2025)]{tau2bench2025}
-V.~Barres, H.~Dong, K.~Gopalakrishnan, et~al.
+V.~Barres, H.~Dong, S.~Ray, X.~Si, and K.~Narasimhan.
 \newblock {$\tau^2$}-bench: Evaluating conversational agents in a
   dual-control environment.
 \newblock \emph{arXiv:2506.07982}, 2025.
@@ -316,8 +317,8 @@ H.~Zhang, and I.~Stoica.
   {PagedAttention}.
 \newblock In \emph{SOSP}, 2023.
 
-\bibitem[{Qwen Team}(2025)]{qwen3}
-{Qwen Team}.
+\bibitem[Yang et~al.(2025)]{qwen3}
+A.~Yang et~al.
 \newblock {Qwen3} technical report.
 \newblock \emph{arXiv:2505.09388}, 2025.
 
@@ -326,17 +327,18 @@ H.~Zhang, and I.~Stoica.
 \newblock {Gemma 3} technical report.
 \newblock \emph{arXiv:2503.19786}, 2025.
 
-\bibitem[Greshake et~al.(2023)]{greshake2023}
-K.~Greshake, S.~Abdelnabi, S.~Mishra, C.~Endres, T.~Holz, and M.~Fritz.
+\bibitem[Abdelnabi et~al.(2023)]{greshake2023}
+S.~Abdelnabi, K.~Greshake, S.~Mishra, C.~Endres, T.~Holz, and M.~Fritz.
 \newblock Not what you've signed up for: Compromising real-world {LLM}-integrated applications with indirect prompt injection.
-\newblock In \emph{ACM CCS}, 2023.
+\newblock In \emph{ACM Workshop on Artificial Intelligence and Security
+  (AISec)}, 2023.
 
 \end{thebibliography}
 
 \appendix
 
 \section{Model-size comparison}
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig4_model_size.png}
 \caption{Qwen3-4B vs.\ Qwen3-8B ($n{=}10$): containment pins harm at zero on
@@ -344,18 +346,21 @@ both sizes; 8B attackers engage less aggressively.}
 \label{fig:size}
 \end{figure}
 
+\clearpage
 \section{Intent-gradient figure}
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=0.92\linewidth]{figures/fig2_intent_gradient.png}
-\caption{Attacker-intent gradient ($n{=}5$/cell). High intent drives contact
-and harm; containment pins harm at zero under all intents.}
+\caption{Attacker-intent sweep ($n{=}5$/cell). High intent drives contact;
+harm varies widely, while containment holds it at zero under both tested
+intents.}
 \label{fig:intent}
 \end{figure}
 
 \section{Reproduction pointers}
-Fixed seeds 0--4 (two episodes each) drive every table; temperature 0
-everywhere. The condition grid lives in \texttt{configs/conditions.yaml};
+Fixed seeds 0--4 drive every table: two episodes per seed in the core matrix
+and one in the sweep; temperature 0 everywhere. The condition grid lives in
+\texttt{configs/conditions.yaml};
 single-command mock smoke: \texttt{uv run pytest}; GPU rollouts via
 \texttt{scripts/pod/run\_matrix.sh} on a Lambda A100 pod (~41 min for the
 40-episode core matrix, ~\$1.35 at \$1.99/hr).
