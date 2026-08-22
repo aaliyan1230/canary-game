@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Generate CanaryGame result figures from authoritative condition-report
-JSONs saved under local/results/{qwen_core_matrix,gemma_80_step}. The intent
-gradient figure uses the pilot sweep numbers (n=2) from
-local/results/sweep-analysis.md. Outputs PNGs to local/results/figures/.
+"""Generate CanaryGame result figures from the private result reports.
+
+The corrected private-namespace containment rerun supersedes the containment
+rows in the original matrix and sweep reports when those files are present.
 """
 import json
-import sys
 from pathlib import Path
 
 import matplotlib
@@ -34,7 +33,19 @@ plt.rcParams.update({
 
 def load_matrix(name: str) -> dict[str, dict]:
     root = RESULTS / name
-    return {c: json.loads((root / f"{c}.json").read_text()) for c in CONDITIONS}
+    reports = {
+        c: json.loads((root / f"{c}.json").read_text()) for c in CONDITIONS
+    }
+    rerun_paths = {
+        "qwen_core_matrix": RESULTS
+        / "rerun_containment/qwen4b/core/containment.json",
+        "gemma_80_step": RESULTS
+        / "rerun_containment/gemma4b_80/core/containment.json",
+    }
+    rerun = rerun_paths.get(name)
+    if rerun is not None and rerun.exists():
+        reports["containment"] = json.loads(rerun.read_text())
+    return reports
 
 
 def ci_of(d: dict, key: str) -> tuple[float, float]:
@@ -89,7 +100,7 @@ def fig1_core_matrix() -> None:
     ax.set_xticks(x)
     ax.set_xticklabels([c.capitalize() for c in CONDITIONS])
     ax.set_ylabel("benign false-positive rate (%)")
-    ax.set_ylim(0, 3)
+    ax.set_ylim(0, 4)
     ax.set_title("(d) Benign false-positive rate")
 
     fig.tight_layout()
@@ -117,7 +128,19 @@ def fig2_intent_gradient() -> None:
         "containment medium": "containment_medium",
     }
     names = list(cells)
-    data = {n: json.loads((RESULTS / "sweep_v2" / f"{cells[n]}.json").read_text()) for n in names}
+    data = {
+        n: json.loads((RESULTS / "sweep_v2" / f"{cells[n]}.json").read_text())
+        for n in names
+    }
+    rerun_sweeps = {
+        "containment high": RESULTS
+        / "rerun_containment/qwen4b/containment_high/containment.json",
+        "containment medium": RESULTS
+        / "rerun_containment/qwen4b/containment_medium/containment.json",
+    }
+    for name, path in rerun_sweeps.items():
+        if path.exists():
+            data[name] = json.loads(path.read_text())
     act = [data[n]["activation_rate"] for n in names]
     harm = [data[n]["post_trigger_harm"] for n in names]
     contagion = [data[n]["contagion"] for n in names]
@@ -172,8 +195,24 @@ def fig4_model_size() -> None:
     m = ["Qwen3-4B", "Qwen3-8B"]
     q4 = json.loads((RESULTS / "qwen_core_matrix" / "coalition.json").read_text())
     q8 = {"activation_rate": 0.3, "post_trigger_harm": 1.9, "contagion": 1.9, "benign_success": 1.0, "benign_fpr": 0.0}
-    c4 = json.loads((RESULTS / "qwen_core_matrix" / "containment.json").read_text())
-    c8 = {"activation_rate": 0.4, "post_trigger_harm": 0.0, "contagion": 0.9, "benign_success": 1.0, "benign_fpr": 0.0}
+    c4_path = RESULTS / "rerun_containment/qwen4b/core/containment.json"
+    c4 = (
+        json.loads(c4_path.read_text())
+        if c4_path.exists()
+        else json.loads((RESULTS / "qwen_core_matrix" / "containment.json").read_text())
+    )
+    c8_path = RESULTS / "rerun_containment/qwen8b/core/containment.json"
+    c8 = (
+        json.loads(c8_path.read_text())
+        if c8_path.exists()
+        else {
+            "activation_rate": 0.4,
+            "post_trigger_harm": 0.0,
+            "contagion": 0.9,
+            "benign_success": 1.0,
+            "benign_fpr": 0.0,
+        }
+    )
     coa = [q4, q8]
     con = [c4, c8]
     x = np.arange(2)
@@ -237,7 +276,9 @@ def fig3_robustness() -> None:
     ax.bar(x - w / 2, qa, w, color="#4c72b0", label=qn)
     ax.bar(x + w / 2, ga, w, color="#dd8452", label=gn)
     ax.set_xticks(x)
-    ax.set_xticklabels([c.capitalize() for c in CONDITIONS])
+    ax.set_xticklabels(
+        [c.capitalize() for c in CONDITIONS], fontsize=8, rotation=20, ha="right"
+    )
     ax.set_ylabel("trap activation")
     ax.set_ylim(0, 1.0)
     ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=2)
@@ -251,7 +292,9 @@ def fig3_robustness() -> None:
     ax.bar(x - w / 2, qs, w, color="#4c72b0", label=qn)
     ax.bar(x + w / 2, gs, w, color="#dd8452", label=gn)
     ax.set_xticks(x)
-    ax.set_xticklabels([c.capitalize() for c in CONDITIONS])
+    ax.set_xticklabels(
+        [c.capitalize() for c in CONDITIONS], fontsize=8, rotation=20, ha="right"
+    )
     ax.set_ylim(0, 1.05)
     ax.set_ylabel("benign success")
     ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=2)
@@ -263,13 +306,15 @@ def fig3_robustness() -> None:
     ax.bar(x - w / 2, qf, w, color="#4c72b0", label=qn)
     ax.bar(x + w / 2, gf, w, color="#dd8452", label=gn)
     ax.set_xticks(x)
-    ax.set_xticklabels([c.capitalize() for c in CONDITIONS])
+    ax.set_xticklabels(
+        [c.capitalize() for c in CONDITIONS], fontsize=8, rotation=20, ha="right"
+    )
     ax.set_ylabel("benign false-positive rate (%)")
-    ax.set_ylim(0, 2.5)
+    ax.set_ylim(0, 4)
     ax.legend(frameon=False, fontsize=8, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=2)
     ax.set_title("(c) Benign FPR (model-stable)")
-    annotate(ax, x - w / 2, qf, 2.5)
-    annotate(ax, x + w / 2, gf, 2.5)
+    annotate(ax, x - w / 2, qf, 4)
+    annotate(ax, x + w / 2, gf, 4)
     fig.tight_layout()
     fig.savefig(OUT / "fig3_robustness.png", dpi=200)
     plt.close(fig)
