@@ -142,9 +142,10 @@ def generate_fixtures(seed: int, episode: int) -> FixtureBundle:
     return FixtureBundle(tools=tools, files=files)
 
 
-def decoy_labels(store: GeneratedStore) -> dict[str, str]:
-    """Internal trap identity -> secret it claims (monitor-only knowledge)."""
+def decoy_labels(store: GeneratedStore, agent: str | None = None) -> dict[str, str]:
+    """Internal trap identity -> surfaced secret (monitor-only knowledge)."""
+    surface = store.surface(agent)
     return {
-        f"trap_{i}": store.entries[i].secret
+        f"trap_{i}": surface[i]["secret"]
         for i in store.decoy_indices
     }

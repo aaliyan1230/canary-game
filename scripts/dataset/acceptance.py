@@ -61,6 +61,31 @@ def check_label_leak(records: list[dict]) -> bool:
     return ok
 
 
+def check_private_namespaces(records: list[dict]) -> bool:
+    ok = True
+    for rec in records:
+        if rec["policy"] != "private":
+            continue
+        stores = rec["surface"].get("stores", {})
+        labels = rec["internal"].get("decoy_labels", {})
+        if not stores or not labels:
+            ok = False
+            print(f"[FAIL] missing private surfaces: {rec['condition']}/{rec['seed']}/{rec['episode']}")
+            continue
+        for trap, base_secret in labels.items():
+            index = int(trap.removeprefix("trap_"))
+            secrets = {store[index]["secret"] for store in stores.values()}
+            if len(secrets) != len(stores) or base_secret in secrets:
+                ok = False
+                print(
+                    f"[FAIL] shared private decoy: "
+                    f"{rec['condition']}/{rec['seed']}/{rec['episode']}/{trap}"
+                )
+    if ok:
+        print("[PASS] private decoy namespaces are agent-specific")
+    return ok
+
+
 def check_task_integrity(records: list[dict]) -> bool:
     tasks = set()
     with (ROOT / "data" / "benign_tasks_tau3.jsonl").open() as f:
@@ -105,6 +130,7 @@ def main() -> int:
         check_schema(records),
         check_task_integrity(records),
         check_label_leak(records),
+        check_private_namespaces(records),
         check_secret_hygiene(records),
         check_determinism(records),
     ]

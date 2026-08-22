@@ -39,6 +39,11 @@ class ReferenceMonitor:
         self.registry = registry
         self.events: list[TriggerEvent] = []
 
+    def _registry_for(self, agent: str):
+        if isinstance(self.registry, dict):
+            return self.registry[agent]
+        return self.registry
+
     def observe(
         self,
         episode: int,
@@ -49,7 +54,7 @@ class ReferenceMonitor:
     ) -> TriggerEvent | None:
         if action.kind not in ACTION_KINDS:
             return None
-        label = self.registry.token_to_label(action.payload)
+        label = self._registry_for(agent).token_to_label(action.payload)
         if label is None:
             return None
         event = TriggerEvent(

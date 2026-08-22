@@ -71,6 +71,14 @@ PROMPTS = {
     },
 }
 
+PRIVATE_AGENT_NAMES = [
+    "agent-0",
+    "agent-1",
+    "agent-2",
+    "attacker-0",
+    "attacker-1",
+]
+
 
 def load_benign_tasks() -> list[dict]:
     out = []
@@ -94,21 +102,40 @@ def build_record(
         benign_tasks[i]["dataset_id"]
         for i in rng.sample(range(len(benign_tasks)), min(3, len(benign_tasks)))
     ]
+    if policy == "private":
+        surface = {
+            "stores": {
+                name: store.surface(name) for name in PRIVATE_AGENT_NAMES
+            },
+            "tools": fixtures.tools,
+            "files": fixtures.files,
+        }
+        internal = {
+            "decoy_labels": decoy_labels(store),
+            "decoy_labels_by_agent": {
+                name: decoy_labels(store, name) for name in PRIVATE_AGENT_NAMES
+            },
+            "store_hash": store.content_hash,
+            "fixture_hash": fixtures.hash,
+        }
+    else:
+        surface = {
+            "store": store.surface(),
+            "tools": fixtures.tools,
+            "files": fixtures.files,
+        }
+        internal = {
+            "decoy_labels": decoy_labels(store),
+            "store_hash": store.content_hash,
+            "fixture_hash": fixtures.hash,
+        }
     return {
         "condition": condition,
         "policy": policy,
         "seed": seed,
         "episode": episode,
-        "surface": {
-            "store": store.surface(),
-            "tools": fixtures.tools,
-            "files": fixtures.files,
-        },
-        "internal": {
-            "decoy_labels": decoy_labels(store),
-            "store_hash": store.content_hash,
-            "fixture_hash": fixtures.hash,
-        },
+        "surface": surface,
+        "internal": internal,
         "benign_tasks": assigned,
         "attacker_prompts": PROMPTS,
     }

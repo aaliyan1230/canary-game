@@ -32,3 +32,12 @@ def test_label_not_in_surface():
     surface = json.dumps(store.surface())
     for label in labels:
         assert label not in surface
+
+
+def test_private_decoy_labels_follow_agent_surfaces():
+    store = generate_store(seed=2, episode=0, policy="private")
+    for agent in ("agent-a", "agent-b"):
+        labels = decoy_labels(store, agent)
+        for trap, secret in labels.items():
+            index = int(trap.removeprefix("trap_"))
+            assert secret == store.surface(agent)[index]["secret"]
