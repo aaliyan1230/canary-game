@@ -48,8 +48,9 @@ coalition (shared memory), rotation control (per-episode decoys), and brokered
 containment (private reference monitor, broker-issued capabilities,
 quarantine). Containment holds post-trigger harm at exactly zero with CI
 $[0,0]$ while reaching the highest trap activation ($0.50$); baseline,
-coalition, and rotation reach harm $12.8$, $16.0$, and $16.9$. An
-attacker-intent sweep spans activation $0.20$--$1.00$ and harm $0.4$--$15.8$.
+coalition, and rotation reach harm $12.8$, $16.0$, and $16.9$. The
+non-containment intent sweep spans activation $0.20$--$1.00$ and harm
+$0.4$--$15.8$; containment-high keeps harm at $0$.
 Core-matrix benign false-positive rate is $0$--$1.8\%$.
 Containment's zero-harm result holds across model sizes; Gemma3-4B is an
 engagement boundary case. Everything runs locally: no real credentials, no
@@ -164,7 +165,7 @@ zero harm.}
 \end{figure}
 
 \section{Results}
-\textbf{Containment restores detection (H3).} Containment alone stops all
+\textbf{Containment blocks decoy harm (H3).} Containment alone stops all
 damage despite the highest activation ($0.50$). Its attack coverage is $0.00$,
 and its post-trigger harm is
 exactly zero with CI $[0,0]$ (Table~\ref{tab:core}, Figure~\ref{fig:core}).
@@ -225,14 +226,14 @@ FPR rises to $3$--$12\%$, and benign success drops to $0.60$--$0.80$
 these runs do not establish task degradation.
 
 \subsection{Results across models}\label{sec:robust}
-Benign behavior transfers cleanly: on Gemma3-4B, engagement is $0.96$--$1.00$,
+Benign behavior is similar on Gemma3-4B: engagement is $0.96$--$1.00$,
 success $0.95$--$1.00$, and FPR near zero everywhere. Attack engagement does
 not transfer: Gemma attackers spend most of their budget scanning and attempt
 their first credential around step 21--39 (Qwen: step 3), so activation stays
 near zero even at an 80-step budget (Figure~\ref{fig:robust}). Where Gemma
 attackers do misuse decoys, containment blocks them all (harm $0.0$).
-Qwen3-8B engages like Qwen3-4B but milder (coalition harm $1.9$ vs.\ $16.0$),
-and containment again holds harm at exactly zero with CI $[0,0]$.
+Qwen3-8B coalition harm is $1.9$ versus $16.0$ for Qwen3-4B, and containment
+again holds harm at exactly zero with CI $[0,0]$.
 The zero-harm containment result holds across model sizes and in the few Gemma
 episodes with decoy misuse. Attacker engagement remains a boundary condition
 for evaluating the theory across model families.
@@ -247,12 +248,10 @@ near-zero FPR (b, c) but rarely activates traps (a).}
 \end{figure}
 
 \section{Discussion and limitations}
-The measurements give directional support for pooling and strong support for
-containment. Shared memory lets a coalition convert one agent's decoy encounter
-into team knowledge, raising mean harm and spreading fingerprints, although
-the harm CIs overlap. A private reference monitor keyed on decoy tokens keeps
-benign FPR near zero, and removing decoys from the broker's issuance path makes
-every decoy touch a dead end. Rotation lowers activation but leaves harm high
+Sharing raises mean harm and spreads fingerprints, although the harm CIs overlap.
+A private reference monitor keyed on decoy tokens yields zero post-trigger harm
+and keeps benign FPR near zero. Removing decoys from the broker's issuance path
+makes every decoy touch a dead end. Rotation lowers activation but leaves harm high
 after contact.
 
 Four limitations bound these claims. (1) Everything is synthetic and offline:
@@ -353,7 +352,7 @@ J.~W. Leong.
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig4_model_size.png}
 \caption{Qwen3-4B vs.\ Qwen3-8B ($n{=}10$): containment pins harm at zero on
-both sizes; 8B attackers engage less aggressively.}
+both sizes; Qwen3-8B shows lower activation and coalition harm.}
 \label{fig:size}
 \end{figure}
 
