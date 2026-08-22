@@ -34,10 +34,10 @@ PY
     --gpu-memory-utilization 0.9 >/tmp/canary-vllm.log 2>&1 &
   model_pid=$!
   for _ in $(seq 1 240); do
-    if curl -sf "$BASE_URL/v1/models" >/dev/null; then break; fi
+    if curl -sf "$BASE_URL/models" >/dev/null; then break; fi
     sleep 5
   done
-  curl -sf "$BASE_URL/v1/models" >/dev/null
+  curl -sf "$BASE_URL/models" >/dev/null
 
   local args=(
     --condition containment --seeds "$SEEDS" --episodes "$EPISODES"
