@@ -10,23 +10,21 @@ Output: 6 pages total = 4 pages main text + references + 2 appendices.
 Figures live in `figures/` (regenerate via `uv run python scripts/figures/plot_results.py`
 from `local/results/*/` JSONs).
 
-# Pre-submission checklist (red TODOs in the PDF)
+# Submission status
 
-1. **Workshop name**: verify exact `\workshoptitle{}` string from the CFP.
-2. **Blind policy**: currently `sglblindworkshop`. If the workshop is
-   double-blind, swap to `\usepackage[dblblindworkshop]{neurips_2025}`
-   (one line, top of paper.tex).
-3. **"When Agents Talk" citation**: the theory we test has a red TODO where
-   its citation belongs. Insert the real reference.
-4. **25–53% benign-FPR comparison** needs a citation.
-5. **Authors**: confirm names, affiliation line, email addresses, and final
-   author order.
-6. **Style year**: `neurips_2025.sty` is the current official file; when the
-   workshop ships a 2026 style, drop it in and update `\usepackage`.
-7. **Verify arXiv IDs** in the bibliography (tau2-bench 2506.07982,
-   Qwen3 2505.09388, Gemma3 2503.19786).
-8. **Dataset flip**: make `ic-org/canarygame-dataset` public right before
-   submission (user-owned action).
+- Target: **Third Workshop on Agents in the Wild: Safety, Security, and
+  Beyond**, NeurIPS 2026 short-paper track.
+- Review policy: double-blind. `paper.tex` uses `dblblindworkshop`; author
+  metadata remains in the source for the camera-ready version but is hidden in
+  the submission PDF.
+- Format: the workshop accepts NeurIPS, ICLR, ICML, ACL, and CVPR templates.
+  This paper uses the included NeurIPS workshop style and omits the main-track
+  checklist, as the workshop instructions allow.
+- Bibliography IDs and the two comparison citations were checked against their
+  arXiv records.
+- Keep `ic-org/canarygame-dataset` private during double-blind review. If data
+  accompanies the submission, upload an anonymized supplementary copy; the
+  public release after review remains a user-owned action.
 
 # Data sources behind every number
 

@@ -1,30 +1,29 @@
 \documentclass{article}
 
-% Agents in the Wild workshop submission.
-% If the workshop turns out to be double-blind, swap this line for:
-%   \usepackage[dblblindworkshop]{neurips_2025}
-\usepackage[sglblindworkshop]{neurips_2025}
+% NeurIPS 2026 AIWILD requires fully anonymized submissions.
+\usepackage[dblblindworkshop]{neurips_2025}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
+\hypersetup{hidelinks}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsfonts}
 %\usepackage{nicefrac}
 \usepackage{microtype}
-\usepackage{xcolor}
 \usepackage{graphicx}
 
-% Red flags that must be resolved before submission.
-\newcommand{\todored}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+\title{Shared-Memory Honeytokens\\in Multi-Agent LLM Systems: A Controlled Simulation}
 
-\title{Shared-Memory Honeytoken Collapse\\in Multi-Agent LLM Systems: A Controlled Simulation}
+\workshoptitle{Third Workshop on Agents in the Wild: Safety, Security, and Beyond}
 
-\workshoptitle{Agents in the Wild \todored{verify exact workshop name}}
+\makeatletter
+\renewcommand{\@noticestring}{Submitted to the \@workshoptitle\ at NeurIPS 2026. Do not distribute.}
+\makeatother
 
 \author{
-  Aaliyan\thanks{Equal contribution. Order fixed at camera-ready.}\\
+  Aaliyan\\
   Independent\\
   \texttt{aaliyan1230@users.noreply.github.com}
   \And
@@ -41,7 +40,7 @@
 Decoy credentials catch agents that misuse secrets they find in their
 environment. When agents share memory, an attacker can pool what it learns
 about decoys, and theory on the shared-memory honeytoken boundary predicts
-that this pooling collapses trap detection exactly when a coalition forms.
+that a coalition can pool weak fingerprints to distinguish decoys.
 We test that prediction in a fully synthetic sandbox where open-weight models
 (Qwen3-4B, Qwen3-8B, Gemma3-4B) run tool-call loops against a credential store
 seeded with decoys. Four conditions isolate the boundary: static baseline,
@@ -66,11 +65,11 @@ In single-agent settings this works because one agent's mistakes stay private.
 In a team that shares memory, they do not: an attacker that touches a decoy
 can tell its teammates, and the coalition learns which credentials are traps
 faster than the defender can rotate them. Theory on this shared-memory
-honeytoken boundary predicts that pooling collapses trap detection exactly
-when a coalition forms~\todored{add citation for ``When Agents Talk''}.
+honeytoken boundary shows how a coalition can pool weak fingerprints and
+reduce its decoy-classification error as observations accumulate~\citep{gans2026agents}.
 
-We measure that prediction rather than assume it. We built CanaryGame, a
-controlled testbed in which open-weight models act as both benign workers and
+We built CanaryGame to measure that prediction. In this controlled testbed,
+open-weight models act as both benign workers and
 adaptive attackers inside a synthetic credential store seeded with decoys. The
 privileged sink only mutates scored sandbox state, so attacks are safe to run
 and cheap to repeat. Four conditions isolate one variable each: whether memory
@@ -215,8 +214,9 @@ contain.\ medium    & medium & 0.20 & \textbf{0.0 (0.0, 0.0)} & 1.6 & 1.00 \\
 
 \textbf{Benign false alarms rise under high-intent attack.} Across the core
 matrix, benign FPR is $0$--$1.8\%$ and benign success $0.95$--$1.00$
-(Figure~\ref{fig:core}d). Trajectory-signature detectors report benign
-false-positive rates of 25--53\%~\todored{citation needed for this comparison};
+(Figure~\ref{fig:core}d). One trajectory-signature detector reports an
+unconditional benign FPR of 25--53\%, depending on the recall
+protocol~\citep{leong2026forensic};
 the reference monitor here keys on decoy tokens rather than trajectories, so
 benign agents rarely trip it. Sustained high-intent attack fills the shared
 pool with attacker fingerprints: benign
@@ -281,13 +281,14 @@ itself is instrumented and the channel under study is peer memory.
 All experiments run locally and offline. Credentials are synthetic, the sink
 mutates only scored sandbox state, and no external systems, live servers, or
 network calls are involved at any point, including during attack rollouts.
-The full dataset (60 records, fixed seeds, acceptance-checked) will be
-released publicly at \texttt{ic-org/canarygame-dataset} for open audit;
-code, configs, pod runner scripts, and per-condition reports accompany it.
+The full dataset (60 records, fixed seeds, acceptance-checked) will accompany
+the submission as anonymized supplementary material and be released publicly
+after review; code, configs, pod runner scripts, and per-condition reports
+accompany it.
 Fixed seeds and temperature-0 decoding make every table regenerable.
 
 \bibliographystyle{plainnat}
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 
 \bibitem[Spitzner(2003)]{spitzner2003honeytokens}
 L.~Spitzner.
@@ -332,6 +333,16 @@ S.~Abdelnabi, K.~Greshake, S.~Mishra, C.~Endres, T.~Holz, and M.~Fritz.
 \newblock Not what you've signed up for: Compromising real-world {LLM}-integrated applications with indirect prompt injection.
 \newblock In \emph{ACM Workshop on Artificial Intelligence and Security
   (AISec)}, 2023.
+
+\bibitem[Gans(2026)]{gans2026agents}
+J.~S. Gans.
+\newblock When agents talk: Honeytokens under shared memory.
+\newblock \emph{arXiv:2608.11436}, 2026.
+
+\bibitem[Leong(2026)]{leong2026forensic}
+J.~W. Leong.
+\newblock Forensic trajectory signatures for agent memory poisoning detection.
+\newblock \emph{arXiv:2606.30566}, 2026.
 
 \end{thebibliography}
 
